@@ -231,6 +231,48 @@ function doPost(e) {
     }
 
     // -------------------------------------------------------------
+    // ACTION: SYNC_CUSTOMER (Real-time Customer Master Sync)
+    // -------------------------------------------------------------
+    if (action === "SYNC_CUSTOMER") {
+      var customer = payload.customer;
+      var custSheet = ss.getSheetByName("Customers");
+      if (custSheet && customer) {
+        var cData = custSheet.getDataRange().getValues();
+        var foundRow = -1;
+        for (var cr = 1; cr < cData.length; cr++) {
+          if (String(cData[cr][0]).trim() === String(customer.id).trim()) {
+            foundRow = cr + 1;
+            break;
+          }
+        }
+        var openDue = Number(customer.openingPastDue || 0);
+        if (foundRow > 0) {
+          custSheet.getRange(foundRow, 2).setValue(customer.name || "");
+          custSheet.getRange(foundRow, 3).setValue(customer.phone || "");
+          custSheet.getRange(foundRow, 4).setValue(customer.locationId || "loc-1");
+          custSheet.getRange(foundRow, 5).setValue(openDue);
+        } else {
+          custSheet.appendRow([
+            customer.id,
+            customer.name || "",
+            customer.phone || "",
+            customer.locationId || "loc-1",
+            openDue,
+            0,
+            0,
+            openDue
+          ]);
+        }
+      }
+      var stats = calculateCapacityStats(ss);
+      return jsonResponse({
+        status: "success",
+        customerId: customer ? customer.id : null,
+        stats: stats
+      });
+    }
+
+    // -------------------------------------------------------------
     // ACTION: BULK_SYNC_ALL (Full Sync of Customers, Rates, Settings)
     // -------------------------------------------------------------
     if (action === "BULK_SYNC_ALL") {
@@ -558,7 +600,10 @@ function syncCustomersList(ss, customers) {
   customers.forEach(function(c) {
     sheet.appendRow([
       c.id, c.name, c.phone, c.locationId || "loc-1", 
-      Number(c.openingPastDue || 0), 0, 0, Number(c.openingPastDue || 0)
+      Number(c.openingPastDue || 0),
+      Number(c.totalBills || 0),
+      Number(c.totalPaid || 0),
+      c.currentBalance !== undefined ? Number(c.currentBalance) : Number(c.openingPastDue || 0)
     ]);
   });
 }

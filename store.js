@@ -682,10 +682,11 @@ class CoreStore {
     return 'BILL-' + (maxSeq + 1);
   }
 
-  save(data) {
+  save(data = this.data) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      this.data = data;
+      const toSave = data || this.data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      this.data = toSave;
     } catch (e) {
       console.error('Failed to write localStorage:', e);
       alert('Local storage quota exceeded or unavailable!');
@@ -1509,6 +1510,125 @@ class CoreStore {
       todayWastageLoss
     };
   }
+
+  saveCustomer(custData) {
+    if (!custData || !custData.name) return null;
+    if (!Array.isArray(this.data.customers)) {
+      this.data.customers = [];
+    }
+
+    let customer = null;
+    const existingIndex = custData.id ? this.data.customers.findIndex(c => c.id === custData.id) : -1;
+    if (existingIndex !== -1) {
+      customer = {
+        ...this.data.customers[existingIndex],
+        ...custData,
+        name: custData.name.trim(),
+        phone: (custData.phone || '').trim(),
+        locationId: custData.locationId || this.currentLocationId,
+        openingPastDue: Number(custData.openingPastDue || 0)
+      };
+      this.data.customers[existingIndex] = customer;
+    } else {
+      customer = {
+        id: custData.id || ('cust-' + Date.now()),
+        name: custData.name.trim(),
+        phone: (custData.phone || '').trim(),
+        locationId: custData.locationId || this.currentLocationId,
+        openingPastDue: Number(custData.openingPastDue || 0)
+      };
+      this.data.customers.push(customer);
+    }
+
+    this.save();
+
+    if (this.data.cloudConfig && this.data.cloudConfig.scriptUrl && this.data.cloudConfig.autoSync) {
+      this.syncCustomerToCloud(customer);
+    }
+
+    return customer;
+  }
+
+  async syncCustomerToCloud(customer) {
+    if (!this.data.cloudConfig || !this.data.cloudConfig.scriptUrl) return;
+    try {
+      const payload = {
+        action: 'SYNC_CUSTOMER',
+        customer: {
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone || '',
+          locationId: customer.locationId || 'loc-1',
+          openingPastDue: Number(customer.openingPastDue || 0)
+        }
+      };
+      await fetch(this.data.cloudConfig.scriptUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.warn('Customer cloud sync queued:', err);
+    }
+  }
+
+  async syncMasterDataToCloud() {
+    const cfg = this.data.cloudConfig || getCloudConfig();
+    const url = cfg ? cfg.scriptUrl : '';
+    if (!url) {
+      return { success: false, message: 'Google Sheets URL not configured' };
+    }
+
+    const customersWithBalances = this.data.customers.map(c => {
+      const custSales = (this.data.sales || []).filter(s => s.customerId === c.id && s.saleType === 'CREDIT' && s.status !== 'VOID');
+      const totalBills = custSales.reduce((sum, s) => sum + Number(s.finalAmount || 0), 0);
+
+      const custPayments = (this.data.payments || []).filter(p => p.customerId === c.id && p.status !== 'VOID');
+      const totalPaid = custPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+      const openDue = Number(c.openingPastDue || 0);
+      const curBal = openDue + totalBills - totalPaid;
+
+      return {
+        id: c.id,
+        name: c.name,
+        phone: c.phone || '',
+        locationId: c.locationId || 'loc-1',
+        openingPastDue: openDue,
+        totalBills: totalBills,
+        totalPaid: totalPaid,
+        currentBalance: curBal
+      };
+    });
+
+    const payload = {
+      action: 'BULK_SYNC_ALL',
+      customers: customersWithBalances,
+      items: this.data.items,
+      shopProfile: this.data.shopProfile,
+      locations: this.data.locations
+    };
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data && data.status === 'success') {
+        cfg.lastSync = new Date().toISOString();
+        if (data.stats) cfg.stats = data.stats;
+        saveCloudConfig(cfg);
+        updateSyncPillUI();
+      }
+      return { success: data && data.status === 'success', data };
+    } catch (err) {
+      console.warn('Master data cloud sync error:', err);
+      return { success: false, message: err.message };
+    }
+  }
 }
 
 const store = new CoreStore();
@@ -2134,16 +2254,13 @@ function bindGlobalModalForms() {
     const opening = parseFloat(document.getElementById('modalCustOpening').value) || 0;
 
     if (!name) return;
-    const newCust = {
-      id: 'cust-' + Date.now(),
+    const newCust = store.saveCustomer({
       name,
       phone,
       locationId: locId,
       openingPastDue: opening
-    };
-    store.data.customers.push(newCust);
+    });
 
-    store.save(store.data);
     closeModal('globalCustomerModal');
     dispatchMandiEvent('customer-saved', newCust);
   });

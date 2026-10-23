@@ -331,8 +331,7 @@
       const s = new CoreStore();
       s.data = mockData;
       s.currentDate = '2026-10-08';
-      s.currentLocationId = 'loc-1';
-      s.save = function(d) { s.data = d; }; // In-memory noop
+      s.save = function(d) { s.data = d || s.data; }; // In-memory noop
       return s;
     }
 
@@ -667,6 +666,68 @@
         const cells = cols * rows;
         expect(cells).toBe(500000); // 5% of 10M
         expect(cells).toBeLessThanOrEqual(10000000);
+      });
+
+      it('verifies real-time customer registration and sync trigger in store.saveCustomer', () => {
+        const s = createMockStore();
+        let syncedCust = null;
+        s.syncCustomerToCloud = (c) => { syncedCust = c; };
+
+        const testCust = s.saveCustomer({
+          name: 'Shree Balaji Traders',
+          phone: '9876543210',
+          locationId: 'loc-1',
+          openingPastDue: 1500
+        });
+
+        expect(testCust).toBeTruthy();
+        expect(testCust.name).toBe('Shree Balaji Traders');
+        expect(testCust.openingPastDue).toBe(1500);
+        expect(syncedCust).toBeTruthy();
+        expect(syncedCust.id).toBe(testCust.id);
+      });
+
+      it('computes live customer balances in syncMasterDataToCloud payload', async () => {
+        const s = createMockStore();
+        s.data.sales.push({
+          id: 's-test-1',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 2000,
+          status: 'ACTIVE'
+        });
+        s.data.payments.push({
+          id: 'p-test-1',
+          customerId: 'cust-1',
+          amount: 500,
+          status: 'ACTIVE'
+        });
+
+        let sentPayload = null;
+        const origFetch = window.fetch;
+        window.fetch = async (url, opts) => {
+          sentPayload = JSON.parse(opts.body);
+          return {
+            json: async () => ({ status: 'success', stats: {} })
+          };
+        };
+
+        try {
+          await s.syncMasterDataToCloud();
+
+          expect(sentPayload).toBeTruthy();
+          expect(sentPayload.action).toBe('BULK_SYNC_ALL');
+          expect(Array.isArray(sentPayload.customers)).toBeTruthy();
+          
+          const cust1 = sentPayload.customers.find(c => c.id === 'cust-1');
+          expect(cust1).toBeTruthy();
+          expect(cust1.openingPastDue).toBe(3000);
+          expect(cust1.totalBills).toBe(2000);
+          expect(cust1.totalPaid).toBe(500);
+          expect(cust1.currentBalance).toBe(4500);
+        } finally {
+          window.fetch = origFetch;
+        }
       });
     });
 
@@ -1137,14 +1198,23 @@
     }
 
     // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
+    function initRunner() {
       initSharedUI('test');
       renderTestGroups(runner.suites);
 
       document.getElementById('btnRunAllTests')?.addEventListener('click', () => {
         runner.runAll();
       });
-    });
+
+      // Auto-run tests on initial load
+      runner.runAll();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initRunner);
+    } else {
+      initRunner();
+    }
   </script>
 </body>
 </html>

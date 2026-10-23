@@ -1273,26 +1273,15 @@
           btn.textContent = 'Syncing...';
           btn.disabled = true;
 
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: 'BULK_SYNC_ALL',
-              customers: store.data.customers,
-              items: store.data.items,
-              shopProfile: store.data.shopProfile,
-              locations: store.data.locations
-            })
-          });
-          const data = await res.json();
+          const result = await store.syncMasterDataToCloud();
           btn.textContent = 'Sync Master Catalog Now';
           btn.disabled = false;
 
-          if (data.status === 'success') {
+          if (result && result.success) {
             alert('Customers, Produce Rates, and Shop Stalls successfully synced to Google Sheets!');
-            if (data.stats) renderCapacityMeter(data.stats);
+            if (result.data && result.data.stats) renderCapacityMeter(result.data.stats);
           } else {
-            alert('Sync failed: ' + (data.message || 'Unknown error'));
+            alert('Sync failed: ' + ((result && (result.message || (result.data && result.data.message))) || 'Unknown error'));
           }
         } catch (err) {
           alert('Network error syncing data: ' + err.message);
