@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Billing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Shared Header -->
+  <header id="sharedHeader" class="app-header">
+    <div class="header-left">
+      <a href="index.html" class="brand-link">
+        <span class="brand-text">Mandi</span>
+      </a>
+      <div class="header-context">
+        <div class="context-group">
+          <label class="context-label" data-i18n="label_location">Location</label>
+          <select id="sharedLocSelect" class="header-select">
+            <option value="loc-1">Main Mandi Yard</option>
+            <option value="loc-2">Wholesale Shed B</option>
+            <option value="loc-3">Fruit Auction Platform</option>
+          </select>
+        </div>
+        <div class="context-group">
+          <label class="context-label" data-i18n="label_date">Date</label>
+          <input type="date" id="sharedDateSelect" class="header-date">
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Navigation Links -->
+    <nav class="desktop-nav">
+      <a href="index.html" class="nav-item active" data-i18n="nav_billing">Billing</a>
+      <a href="dashboard.html" class="nav-item" data-i18n="nav_dashboard">Dashboard</a>
+      <a href="customers.html" class="nav-item" data-i18n="nav_customers">Customers</a>
+      <a href="daybook.html" class="nav-item" data-i18n="nav_daybook">Daybook</a>
+      <a href="items.html" class="nav-item" data-i18n="nav_rates">Rates</a>
+      <a href="settings.html" class="nav-item" data-i18n="nav_settings">Settings</a>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="header-right">
+      <div class="create-dropdown-wrap">
+        <button id="createMenuBtn" class="btn-create" data-i18n="btn_create">+ Create</button>
+      </div>
+      <button id="sharedLangToggle" class="btn-icon" title="Toggle Language">हिन्दी</button>
+      <button id="sharedThemeToggle" class="btn-icon" title="Toggle Theme">
+        <span class="theme-sun">Light</span>
+        <span class="theme-moon">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Billing Workspace -->
+  <main class="billing-layout">
+    
+    <!-- LEFT: Catalog & Item Selection -->
+    <section class="billing-catalog">
+      <div class="catalog-search-bar">
+        <input type="text" id="catalogSearch" class="search-input" placeholder="Search produce..." style="flex:1;">
+        <select id="catalogCategory" class="header-select">
+          <option value="ALL">All Categories</option>
+        </select>
+      </div>
+
+      <div class="catalog-items-grid" id="catalogGrid">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- RIGHT: Active Bill Docket -->
+    <section class="billing-docket">
+      <div class="docket-top">
+        <div class="buyer-selector-bar">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+              <button type="button" class="btn-ghost mobile-back-to-catalog" onclick="scrollToCatalog()" style="padding:1px 6px; font-size:0.7rem;">&uarr; Catalog</button>
+              <label class="context-label">Buyer / Party</label>
+              <span class="badge font-mono" id="docketNextBillBadge" style="font-size:0.68rem; background:rgba(255,255,255,0.06); color:var(--text-dim); font-weight:700;">BILL-1001</span>
+            </div>
+            <button type="button" class="btn-ghost" style="padding:1px 6px; font-size:0.7rem;" onclick="openGlobalCustomerModal()">+ New Customer</button>
+          </div>
+          <select id="docketCustomerSelect" class="form-select">
+            <!-- Dynamic customers -->
+          </select>
+
+          <!-- Customer Balance Alert (Visible when a customer with existing dues is picked) -->
+          <div id="customerDebtAlert" class="customer-due-warning hidden">
+            <span><strong>Existing Khata:</strong> Past: <span id="alertPastDue" class="text-danger font-mono font-bold">₹0</span> | Total Due: <span id="alertTotalDue" class="text-danger font-mono font-bold">₹0</span></span>
+          </div>
+
+          <!-- Settlement Mode Toggle -->
+          <div class="buyer-type-pills">
+            <button type="button" class="buyer-type-btn active cash" id="btnTypeCash">
+              Direct Cash
+            </button>
+            <button type="button" class="buyer-type-btn credit" id="btnTypeCredit">
+              Daily Credit (Khata)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Cart Table -->
+      <div class="docket-items-list">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:42%;">Produce</th>
+              <th style="width:20%; text-align:right;">Weight</th>
+              <th style="width:18%; text-align:right;">Rate</th>
+              <th style="width:20%; text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody id="docketItemsBody">
+            <!-- Dynamic Cart Rows -->
+          </tbody>
+        </table>
+        <div id="docketEmptyMsg" class="docket-empty-state" style="padding:2.5rem 1rem; text-align:center; color:var(--text-dim); font-size:0.8rem;">
+          Select produce from the left to start billing
+        </div>
+      </div>
+
+      <!-- Docket Summary & Checkout -->
+      <div class="docket-summary">
+        <div class="docket-line">
+          <span class="text-muted">Items Subtotal:</span>
+          <span class="font-mono font-bold" id="docketGrossVal">₹0.00</span>
+        </div>
+
+        <div class="docket-line">
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span class="text-muted">Round-Off (+ / -):</span>
+            <button type="button" class="btn-ghost" id="btnAutoRound" style="padding:1px 6px; font-size:0.65rem;" title="Auto round-off to nearest rupee">Auto</button>
+          </div>
+          <input type="number" id="docketRoundOff" class="roundoff-input-field" step="0.5" value="0.00">
+        </div>
+
+        <div class="docket-line grand">
+          <span>Final Payable:</span>
+          <span class="font-mono" id="docketFinalVal">₹0.00</span>
+        </div>
+
+        <input type="text" id="docketNotes" placeholder="Notes / Crate count / Vehicle (optional)" class="form-input" style="padding:0.25rem 0.5rem; font-size:0.75rem;">
+
+        <div style="display:flex; gap:0.5rem; margin-top:0.25rem;">
+          <button type="button" class="btn-ghost" id="docketClearBtn" style="padding:0.6rem 0.75rem;">Clear</button>
+          <button type="button" class="btn-checkout" id="docketCompleteBtn" style="flex:1;">Complete & Print Bill</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Floating Mobile Docket Bar -->
+  <div id="mobileCartBar" class="mobile-cart-bar hidden" onclick="scrollToDocket()">
+    <div style="display:flex; align-items:center; gap:0.6rem;">
+      <span class="mobile-cart-badge" id="mobileCartCount">0 items</span>
+      <span class="mobile-cart-total font-mono font-bold" id="mobileCartTotal">₹0.00</span>
+    </div>
+    <span class="btn-primary" style="padding:0.3rem 0.65rem; font-size:0.74rem;">
+      View Bill &rarr;
+    </span>
+  </div>
+
+  <!-- Mobile Bottom Nav -->
+  <nav id="sharedMobileNav" class="mobile-bottom-nav"></nav>
+
+  <script src="store.js?v=2"></script>
+  <script>
+    // ==========================================
+    // BILLING TERMINAL CONTROLLER
+    // ==========================================
+    let currentSaleType = 'DIRECT';
+    let activeCart = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('billing');
+      initBillingTerminal();
+      populateCategoryFilter();
+      renderCatalog();
+      populateCustomerSelect();
+      renderCart();
+    });
+
+    function initBillingTerminal() {
+      // Set initial next bill badge
+      const nextBadge = document.getElementById('docketNextBillBadge');
+      if (nextBadge) nextBadge.textContent = store.getNextBillNumber();
+
+      // Search and category
+      document.getElementById('catalogSearch')?.addEventListener('input', renderCatalog);
+      document.getElementById('catalogCategory')?.addEventListener('change', renderCatalog);
+
+      // Payment Type Switcher
+      const cashBtn = document.getElementById('btnTypeCash');
+      const creditBtn = document.getElementById('btnTypeCredit');
+
+      cashBtn?.addEventListener('click', () => {
+        currentSaleType = 'DIRECT';
+        cashBtn.classList.add('active');
+        creditBtn.classList.remove('active');
+      });
+
+      creditBtn?.addEventListener('click', () => {
+        currentSaleType = 'CREDIT';
+        creditBtn.classList.add('active');
+        cashBtn.classList.remove('active');
+      });
+
+      // Auto round-off button
+      document.getElementById('btnAutoRound')?.addEventListener('click', () => {
+        const gross = activeCart.reduce((sum, i) => sum + (Number(i.lineTotal) || 0), 0);
+        const rounded = Math.round(gross);
+        const diff = Number((rounded - gross).toFixed(2));
+        const roundInput = document.getElementById('docketRoundOff');
+        if (roundInput) {
+          roundInput.value = diff.toFixed(2);
+          renderCartTotals();
+        }
+      });
+
+      // Customer selection change: sync payment type & debt alert
+      document.getElementById('docketCustomerSelect')?.addEventListener('change', (e) => {
+        const custId = e.target.value;
+        if (!custId) {
+          currentSaleType = 'DIRECT';
+          cashBtn?.classList.add('active');
+          creditBtn?.classList.remove('active');
+        } else {
+          currentSaleType = 'CREDIT';
+          creditBtn?.classList.add('active');
+          cashBtn?.classList.remove('active');
+        }
+        updateCustomerDebtAlert(custId);
+      });
+
+      // Re-check debt alert on payment saved or cross-tab sync
+      window.addEventListener('mandi:payment-saved', () => {
+        const curId = document.getElementById('docketCustomerSelect')?.value;
+        if (curId) updateCustomerDebtAlert(curId);
+      });
+      window.addEventListener('mandi:storage-sync', () => {
+        const curId = document.getElementById('docketCustomerSelect')?.value;
+        if (curId) updateCustomerDebtAlert(curId);
+        if (nextBadge) nextBadge.textContent = store.getNextBillNumber();
+      });
+
+      // Round-off
+      document.getElementById('docketRoundOff')?.addEventListener('input', renderCartTotals);
+
+      // Clear & Checkout
+      document.getElementById('docketClearBtn')?.addEventListener('click', () => {
+        const custSelect = document.getElementById('docketCustomerSelect');
+        if (activeCart.length === 0 && (!custSelect || !custSelect.value)) return;
+        if (confirm('Clear current bill?')) {
+          activeCart = [];
+          document.getElementById('docketRoundOff').value = '0.00';
+          document.getElementById('docketNotes').value = '';
+          if (custSelect) custSelect.value = '';
+          document.getElementById('customerDebtAlert')?.classList.add('hidden');
+          currentSaleType = 'DIRECT';
+          document.getElementById('btnTypeCash')?.classList.add('active');
+          document.getElementById('btnTypeCredit')?.classList.remove('active');
+          renderCart();
+        }
+      });
+
+      document.getElementById('docketCompleteBtn')?.addEventListener('click', completeBill);
+    }
+
+    function updateCustomerDebtAlert(custId) {
+      const alertBox = document.getElementById('customerDebtAlert');
+      if (!alertBox) return;
+      if (!custId) {
+        alertBox.classList.add('hidden');
+        return;
+      }
+      const dues = store.getCustomerBalanceBreakdown(custId, store.currentDate);
+      if (dues.totalOverdue > 0) {
+        alertBox.style.borderColor = 'var(--color-danger)';
+        alertBox.style.background = 'rgba(239, 68, 68, 0.1)';
+        let details = `Past: <span class="text-danger font-mono font-bold">${formatCurrency(dues.pastOverdue)}</span>`;
+        if (dues.todaysCredit > 0) {
+          details += ` | Today: <span class="text-warning font-mono font-bold">${formatCurrency(dues.todaysCredit)}</span>`;
+        }
+        details += ` | Total Due: <span class="text-danger font-mono font-bold">${formatCurrency(dues.totalOverdue)}</span>`;
+        alertBox.innerHTML = `<span><strong>Existing Khata:</strong> ${details}</span>`;
+        alertBox.classList.remove('hidden');
+      } else if (dues.advanceCredit > 0) {
+        alertBox.style.borderColor = 'var(--color-success)';
+        alertBox.style.background = 'rgba(16, 185, 129, 0.1)';
+        alertBox.innerHTML = `<span><strong>Advance Deposit (Jama):</strong> <span class="text-success font-mono font-bold">${formatCurrency(dues.advanceCredit)}</span> available</span>`;
+        alertBox.classList.remove('hidden');
+      } else {
+        alertBox.classList.add('hidden');
+      }
+    }
+
+    function populateCategoryFilter() {
+      const select = document.getElementById('catalogCategory');
+      if (!select) return;
+      const currentVal = select.value || 'ALL';
+      const categories = Array.from(new Set(
+        store.data.items.map(i => (i.category || '').trim()).filter(Boolean)
+      )).sort();
+
+      select.innerHTML = `
+        <option value="ALL">All Categories</option>
+        ${categories.map(c => `<option value="${c}" ${c.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${c}</option>`).join('')}
+      `;
+    }
+
+    function populateCustomerSelect() {
+      const select = document.getElementById('docketCustomerSelect');
+      if (!select) return;
+      const currentSelected = select.value;
+      const allCustomers = store.data.customers || [];
+      const currentStall = allCustomers.filter(c => !c.locationId || c.locationId === store.currentLocationId);
+      const otherStalls = allCustomers.filter(c => c.locationId && c.locationId !== store.currentLocationId);
+
+      let optionsHtml = '<option value="">-- Walk-in Cash Buyer (फुटकर) --</option>';
+      if (currentStall.length > 0) {
+        optionsHtml += currentStall.map(c => `<option value="${c.id}">${c.name} (${c.phone || 'No phone'})</option>`).join('');
+      }
+      if (otherStalls.length > 0) {
+        optionsHtml += '<optgroup label="Other Market Stalls / Platforms">';
+        optionsHtml += otherStalls.map(c => {
+          const loc = store.data.locations.find(l => l.id === c.locationId);
+          const locCode = loc ? (loc.code || loc.name) : 'Other';
+          return `<option value="${c.id}">${c.name} (${c.phone || 'No phone'}) [${locCode}]</option>`;
+        }).join('');
+        optionsHtml += '</optgroup>';
+      }
+      select.innerHTML = optionsHtml;
+      if (currentSelected) select.value = currentSelected;
+    }
+
+    function renderCatalog() {
+      const grid = document.getElementById('catalogGrid');
+      const search = (document.getElementById('catalogSearch')?.value || '').toLowerCase();
+      const cat = document.getElementById('catalogCategory')?.value || 'ALL';
+
+      let items = store.data.items;
+      if (cat !== 'ALL') {
+        items = items.filter(i => (i.category || '').toLowerCase() === cat.toLowerCase());
+      }
+      if (search) {
+        items = items.filter(i => i.name.toLowerCase().includes(search));
+      }
+
+      let html = items.map(item => {
+        const stock = Number(item.currentStock) || 0;
+        const minAlert = Number(item.minAlertStock) || 20;
+        let stockBadge = '';
+        if (stock <= 0) {
+          stockBadge = `<span class="badge" style="background:rgba(239,68,68,0.15); color:var(--color-danger); font-size:0.65rem; padding:1px 4px;">Out of stock</span>`;
+        } else if (stock <= minAlert) {
+          stockBadge = `<span class="badge" style="background:rgba(245,158,11,0.15); color:var(--color-warning); font-size:0.65rem; padding:1px 4px;">Low: ${stock} ${item.unit}</span>`;
+        } else {
+          stockBadge = `<span style="font-size:0.68rem; color:var(--text-dim); font-family:var(--font-mono);">${stock} ${item.unit}</span>`;
+        }
+
+        return `
+          <div class="item-tile" onclick="addItemToCart('${item.id}')">
+            <div style="flex:1;">
+              <div class="tile-name">${item.name}</div>
+              <div style="display:flex; gap:0.4rem; align-items:center; margin-top:2px;">
+                <span class="tile-unit">per ${item.unit}</span>
+                ${stockBadge}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="tile-rate">${formatCurrency(item.defaultRate)}</div>
+              ${item.costPrice ? `<div style="font-size:0.68rem; color:var(--text-dim);">Cost: ₹${Number(item.costPrice).toFixed(2)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // "+ Custom Item" tile
+      html += `
+        <div class="item-tile" style="border-style:dashed; align-items:center; justify-content:center; text-align:center;" onclick="openGlobalItemModal()">
+          <span class="text-muted font-bold">+ New Produce</span>
+        </div>
+      `;
+
+      grid.innerHTML = html;
+    }
+
+    function addItemToCart(itemId) {
+      const item = store.data.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      const existing = activeCart.find(i => i.itemId === item.id);
+      if (existing) {
+        existing.weight += (item.unit === 'kg' ? 5 : 1);
+        existing.lineTotal = Number((existing.weight * existing.rate).toFixed(2));
+      } else {
+        const defaultWeight = (item.unit === 'box' || item.unit === 'crate' || item.unit === 'bag') ? 1 : 10;
+        activeCart.push({
+          id: 'cart-' + Date.now() + '-' + Math.floor(Math.random() * 100),
+          itemId: item.id,
+          itemName: item.name,
+          unit: item.unit,
+          weight: defaultWeight,
+          rate: item.defaultRate,
+          lineTotal: Number((defaultWeight * item.defaultRate).toFixed(2))
+        });
+      }
+
+      renderCart();
+    }
+
+    function renderCart() {
+      const tbody = document.getElementById('docketItemsBody');
+      const emptyMsg = document.getElementById('docketEmptyMsg');
+
+      if (activeCart.length === 0) {
+        tbody.innerHTML = '';
+        emptyMsg?.classList.remove('hidden');
+        renderCartTotals();
+        return;
+      }
+
+      emptyMsg?.classList.add('hidden');
+
+      tbody.innerHTML = activeCart.map(item => `
+        <tr>
+          <td>
+            <div class="font-bold" style="font-size:0.8rem;">${item.itemName}</div>
+            <small class="text-muted">${item.unit}</small>
+          </td>
+          <td style="text-align:right;">
+            <input type="number" class="form-input font-mono" style="width:60px; text-align:right; padding:2px 4px;" step="0.5" min="0.1" value="${item.weight}" oninput="updateCartItemWeight('${item.id}', this.value)">
+          </td>
+          <td style="text-align:right;">
+            <input type="number" class="form-input font-mono" style="width:60px; text-align:right; padding:2px 4px;" step="0.5" min="0" value="${item.rate}" oninput="updateCartItemRate('${item.id}', this.value)">
+          </td>
+          <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">
+            <span id="lineTotal-${item.id}">${formatCurrency(item.lineTotal)}</span>
+            <button class="btn-ghost" style="padding:0 3px; border:none; color:var(--color-danger);" onclick="removeCartItem('${item.id}')">&times;</button>
+          </td>
+        </tr>
+      `).join('');
+
+      renderCartTotals();
+    }
+
+    function updateCartItemWeight(cartId, val) {
+      const item = activeCart.find(i => i.id === cartId);
+      if (!item) return;
+      item.weight = parseFloat(val) || 0;
+      item.lineTotal = Number((item.weight * item.rate).toFixed(2));
+      const lineEl = document.getElementById(`lineTotal-${item.id}`);
+      if (lineEl) lineEl.textContent = formatCurrency(item.lineTotal);
+      renderCartTotals();
+    }
+
+    function updateCartItemRate(cartId, val) {
+      const item = activeCart.find(i => i.id === cartId);
+      if (!item) return;
+      item.rate = parseFloat(val) || 0;
+      item.lineTotal = Number((item.weight * item.rate).toFixed(2));
+      const lineEl = document.getElementById(`lineTotal-${item.id}`);
+      if (lineEl) lineEl.textContent = formatCurrency(item.lineTotal);
+      renderCartTotals();
+    }
+
+    function removeCartItem(cartId) {
+      activeCart = activeCart.filter(i => i.id !== cartId);
+      renderCart();
+    }
+
+    function renderCartTotals() {
+      const gross = activeCart.reduce((sum, i) => sum + (Number(i.lineTotal) || 0), 0);
+      const roundOff = parseFloat(document.getElementById('docketRoundOff')?.value) || 0;
+      const finalAmount = Math.max(0, gross + roundOff);
+
+      document.getElementById('docketGrossVal').textContent = formatCurrency(gross);
+      document.getElementById('docketFinalVal').textContent = formatCurrency(finalAmount);
+
+      // Update mobile floating bar
+      const mobileBar = document.getElementById('mobileCartBar');
+      const mobileCount = document.getElementById('mobileCartCount');
+      const mobileTotal = document.getElementById('mobileCartTotal');
+      if (mobileBar && mobileCount && mobileTotal) {
+        if (activeCart.length > 0) {
+          mobileBar.classList.remove('hidden');
+          mobileCount.textContent = `${activeCart.length} item${activeCart.length === 1 ? '' : 's'}`;
+          mobileTotal.textContent = formatCurrency(finalAmount);
+        } else {
+          mobileBar.classList.add('hidden');
+        }
+      }
+    }
+
+    function scrollToDocket() {
+      const docket = document.querySelector('.billing-docket');
+      if (docket) {
+        docket.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+          document.getElementById('docketCustomerSelect')?.focus();
+        }, 350);
+      }
+    }
+
+    function scrollToCatalog() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function completeBill() {
+      if (activeCart.length === 0) {
+        alert('Please add at least one produce item to the bill!');
+        return;
+      }
+
+      const custId = document.getElementById('docketCustomerSelect').value;
+      if (currentSaleType === 'CREDIT' && !custId) {
+        alert('Please select a customer for Daily Credit sale!');
+        return;
+      }
+
+      const gross = activeCart.reduce((sum, i) => sum + (Number(i.lineTotal) || 0), 0);
+      const roundOff = parseFloat(document.getElementById('docketRoundOff').value) || 0;
+      const finalAmount = Math.max(0, gross + roundOff);
+      const notes = (document.getElementById('docketNotes')?.value || '').trim();
+
+      const cust = store.data.customers.find(c => c.id === custId);
+      const custName = cust ? cust.name : 'Walk-in Cash Buyer';
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let totalCost = 0;
+      const saleItems = activeCart.map(i => {
+        const itemMaster = store.data.items.find(itm => itm.id === i.itemId);
+        const costPrice = itemMaster ? (Number(itemMaster.costPrice) || 0) : 0;
+        const lineCost = (Number(i.weight) || 0) * costPrice;
+        const lineProfit = (Number(i.lineTotal) || 0) - lineCost;
+        totalCost += lineCost;
+
+        return {
+          itemId: i.itemId,
+          itemName: i.itemName,
+          unit: i.unit,
+          weight: i.weight,
+          rate: i.rate,
+          costPrice,
+          lineTotal: i.lineTotal,
+          lineCost,
+          profit: lineProfit
+        };
+      });
+
+      const grossProfit = finalAmount - totalCost;
+      const profitMargin = finalAmount > 0 ? (grossProfit / finalAmount) * 100 : 0;
+
+      const newSale = {
+        id: 'sale-' + Date.now(),
+        billNo: store.getNextBillNumber(),
+        date: store.currentDate,
+        time: timeStr,
+        locationId: store.currentLocationId,
+        saleType: currentSaleType,
+        customerId: custId || null,
+        customerName: custName,
+        items: saleItems,
+        grossSubtotal: gross,
+        roundOff,
+        finalAmount,
+        totalCost,
+        grossProfit,
+        profitMargin,
+        paidToday: currentSaleType === 'DIRECT' ? finalAmount : 0,
+        notes
+      };
+
+      // Auto-deplete inventory stock on bill creation
+      activeCart.forEach(i => {
+        const itm = store.data.items.find(x => x.id === i.itemId);
+        if (itm) {
+          itm.currentStock = Math.max(0, (Number(itm.currentStock) || 0) - (Number(i.weight) || 0));
+        }
+      });
+
+      store.data.sales.unshift(newSale);
+      store.save(store.data);
+
+      if (typeof syncBillToCloudAsync === 'function') {
+        syncBillToCloudAsync(newSale);
+      }
+
+      // Reset cart and buyer selection back to walk-in cash
+      activeCart = [];
+      document.getElementById('docketRoundOff').value = '0.00';
+      document.getElementById('docketNotes').value = '';
+
+      const custSelect = document.getElementById('docketCustomerSelect');
+      if (custSelect) custSelect.value = '';
+      document.getElementById('customerDebtAlert')?.classList.add('hidden');
+
+      currentSaleType = 'DIRECT';
+      document.getElementById('btnTypeCash')?.classList.add('active');
+      document.getElementById('btnTypeCredit')?.classList.remove('active');
+
+      const nextBadge = document.getElementById('docketNextBillBadge');
+      if (nextBadge) nextBadge.textContent = store.getNextBillNumber();
+
+      renderCart();
+
+      // Show receipt modal
+      showReceiptSlip(newSale.id);
+    }
+  </script>
+</body>
+</html>

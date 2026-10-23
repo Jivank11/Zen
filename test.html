@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Automated Test Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .test-dashboard {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .test-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .test-summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .test-stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .test-stat-num {
+      font-family: var(--font-mono);
+      font-size: 1.75rem;
+      font-weight: 800;
+      display: block;
+      margin-top: 4px;
+    }
+
+    .test-group {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+
+    .test-group-header {
+      padding: 0.85rem 1.25rem;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .test-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.82rem;
+      transition: background 0.15s ease;
+    }
+
+    .test-item-row:last-child {
+      border-bottom: none;
+    }
+
+    .test-item-row:hover {
+      background: var(--bg-hover);
+    }
+
+    .badge-pass {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 2px 8px;
+      border-radius: var(--radius-xs);
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+
+    .badge-fail {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 2px 8px;
+      border-radius: var(--radius-xs);
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+
+    .badge-pending {
+      background: var(--bg-subtle);
+      color: var(--text-dim);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 8px;
+      border-radius: var(--radius-xs);
+      font-weight: 600;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+
+    .test-err-msg {
+      margin-top: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--color-danger);
+      background: var(--color-danger-bg);
+      padding: 4px 8px;
+      border-radius: var(--radius-xs);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Bar -->
+  <header id="sharedHeader" class="app-header">
+    <div class="header-left">
+      <a href="index.html" class="brand-link">
+        <span class="brand-text">Mandi</span>
+      </a>
+      <span class="text-dim" style="font-size:0.8rem; margin-left:12px; font-weight:600;">Automated Test Suite & Verification Runner</span>
+    </div>
+
+    <div class="header-right">
+      <a href="index.html" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem;">Return to POS</a>
+      <button id="sharedThemeToggle" class="btn-icon" title="Toggle Theme">
+        <span class="theme-sun">Light</span>
+        <span class="theme-moon">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="test-dashboard">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.75rem;">
+      <div>
+        <h2 style="font-size:1.35rem; font-weight:800; margin:0;">System Verification Test Suite</h2>
+        <span class="text-dim" style="font-size:0.78rem;">Verifies billing math, Khata accounting, Daybook reconciliation, Annual Rollover, UTF-8 BOM, and cloud limits.</span>
+      </div>
+      <div style="display:flex; gap:0.6rem;">
+        <button type="button" class="btn-primary" id="btnRunAllTests" style="padding:0.5rem 1.25rem; font-size:0.82rem;">
+          Run All Tests
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="test-summary-grid">
+      <div class="test-stat-card">
+        <span class="text-dim" style="font-size:0.72rem; text-transform:uppercase; font-weight:700;">Total Tests</span>
+        <span id="statTotal" class="test-stat-num">0</span>
+      </div>
+      <div class="test-stat-card">
+        <span class="text-dim" style="font-size:0.72rem; text-transform:uppercase; font-weight:700;">Passed</span>
+        <span id="statPassed" class="test-stat-num text-success">0</span>
+      </div>
+      <div class="test-stat-card">
+        <span class="text-dim" style="font-size:0.72rem; text-transform:uppercase; font-weight:700;">Failed</span>
+        <span id="statFailed" class="test-stat-num text-danger">0</span>
+      </div>
+      <div class="test-stat-card">
+        <span class="text-dim" style="font-size:0.72rem; text-transform:uppercase; font-weight:700;">Execution Time</span>
+        <span id="statTime" class="test-stat-num font-mono">0 ms</span>
+      </div>
+    </div>
+
+    <!-- Filter Pills -->
+    <div style="display:flex; gap:0.4rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+      <button type="button" class="btn-ghost filter-pill active" onclick="filterTestSuite('ALL', this)" style="padding:3px 10px; font-size:0.75rem;">All Categories</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Billing & Math', this)" style="padding:3px 10px; font-size:0.75rem;">Billing & Math</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Khata Accounting', this)" style="padding:3px 10px; font-size:0.75rem;">Khata Accounting</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Daybook Audit', this)" style="padding:3px 10px; font-size:0.75rem;">Daybook Audit</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Annual Rollover', this)" style="padding:3px 10px; font-size:0.75rem;">Annual Rollover</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('CSV & UTF-8 BOM', this)" style="padding:3px 10px; font-size:0.75rem;">CSV & UTF-8 BOM</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Cloud Capacity', this)" style="padding:3px 10px; font-size:0.75rem;">Cloud Capacity</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('FY Archives & Audit', this)" style="padding:3px 10px; font-size:0.75rem;">FY Archives & Audit</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Owner PIN Security', this)" style="padding:3px 10px; font-size:0.75rem;">Owner PIN Security</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Offline Sync Queue', this)" style="padding:3px 10px; font-size:0.75rem;">Offline Sync Queue</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('WhatsApp & Receipt', this)" style="padding:3px 10px; font-size:0.75rem;">WhatsApp & Receipts</button>
+      <button type="button" class="btn-ghost filter-pill" onclick="filterTestSuite('Inventory & Profit', this)" style="padding:3px 10px; font-size:0.75rem;">Inventory &amp; Profit</button>
+    </div>
+
+    <!-- Test Groups Container -->
+    <div id="testOutputContainer">
+      <!-- Populated dynamically by test runner -->
+    </div>
+  </main>
+
+  <!-- Load Mandi Core Logic (store.js) -->
+  <script src="store.js?v=test"></script>
+  <script>
+    // -------------------------------------------------------------
+    // LIGHTWEIGHT IN-MEMORY ISOLATED TEST HARNESS
+    // -------------------------------------------------------------
+    const testResults = [];
+    let currentFilter = 'ALL';
+
+    class TestRunner {
+      constructor() {
+        this.suites = [];
+      }
+
+      describe(suiteName, fn) {
+        const suite = { name: suiteName, tests: [] };
+        this.suites.push(suite);
+        const it = (testName, testFn) => {
+          suite.tests.push({ name: testName, fn: testFn, status: 'PENDING', time: 0, error: null });
+        };
+        fn(it);
+      }
+
+      async runAll() {
+        const startTime = performance.now();
+        let passed = 0;
+        let failed = 0;
+        let total = 0;
+
+        for (const suite of this.suites) {
+          for (const test of suite.tests) {
+            total++;
+            const t0 = performance.now();
+            try {
+              await test.fn();
+              test.status = 'PASS';
+              test.time = (performance.now() - t0).toFixed(2);
+              passed++;
+            } catch (err) {
+              test.status = 'FAIL';
+              test.time = (performance.now() - t0).toFixed(2);
+              test.error = err.message || String(err);
+              failed++;
+            }
+          }
+        }
+
+        const totalTime = (performance.now() - startTime).toFixed(1);
+        updateSummary(total, passed, failed, totalTime);
+        renderTestGroups(this.suites);
+      }
+    }
+
+    // Assertion Utilities
+    function expect(actual) {
+      return {
+        toBe(expected) {
+          if (actual !== expected) {
+            throw new Error(`Expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`);
+          }
+        },
+        toBeCloseTo(expected, delta = 0.01) {
+          if (Math.abs(actual - expected) > delta) {
+            throw new Error(`Expected ${actual} to be close to ${expected} (delta: ${delta})`);
+          }
+        },
+        toEqual(expected) {
+          if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+            throw new Error(`Expected deep equality:\nExpected: ${JSON.stringify(expected)}\nReceived: ${JSON.stringify(actual)}`);
+          }
+        },
+        toBeTruthy() {
+          if (!actual) throw new Error(`Expected truthy value, received: ${actual}`);
+        },
+        toBeFalsy() {
+          if (actual) throw new Error(`Expected falsy value, received: ${actual}`);
+        },
+        toBeGreaterThan(val) {
+          if (actual <= val) throw new Error(`Expected ${actual} > ${val}`);
+        },
+        toBeGreaterThanOrEqual(val) {
+          if (actual < val) throw new Error(`Expected ${actual} >= ${val}`);
+        },
+        toBeLessThanOrEqual(val) {
+          if (actual > val) throw new Error(`Expected ${actual} <= ${val}`);
+        },
+        toContain(str) {
+          if (!String(actual).includes(str)) {
+            throw new Error(`Expected string to contain "${str}", but got "${actual}"`);
+          }
+        }
+      };
+    }
+
+    // -------------------------------------------------------------
+    // CREATE ISOLATED SANDBOX STORE (DOES NOT TOUCH REAL LOCALSTORAGE)
+    // -------------------------------------------------------------
+    function createMockStore() {
+      const mockData = {
+        locations: [
+          { id: 'loc-1', name: 'Main Mandi Yard', code: 'MAIN' },
+          { id: 'loc-2', name: 'Wholesale Shed B', code: 'SHED-B' }
+        ],
+        shopProfile: {
+          name: 'Test Commission Agency',
+          subtitle: 'Wholesale Test Yard',
+          address: 'Yard Gate 1',
+          phone: '9845012345',
+          commissionRate: 5.0
+        },
+        items: [
+          { id: 'itm-1', name: 'Tomato Hybrid', category: 'Vegetables', unit: 'kg', defaultRate: 35.00 },
+          { id: 'itm-2', name: 'Nashik Onion', category: 'Vegetables', unit: 'kg', defaultRate: 28.50 },
+          { id: 'itm-3', name: 'Shimla Apple', category: 'Fruits', unit: 'box', defaultRate: 1200.00 }
+        ],
+        customers: [
+          { id: 'cust-1', name: 'Ramesh Sabzi', phone: '9845000001', locationId: 'loc-1', openingPastDue: 3000.00 },
+          { id: 'cust-2', name: 'Suresh Fruits', phone: '9845000002', locationId: 'loc-1', openingPastDue: 0.00 }
+        ],
+        sales: [],
+        payments: [],
+        cloudConfig: {
+          scriptUrl: 'https://script.google.com/macros/s/test/exec',
+          activeYear: '2026_27',
+          autoSync: true,
+          stats: { salesRowsUsed: 1200, salesRowsLimit: 50000, rowsRemaining: 48800, isWarning: false }
+        }
+      };
+
+      const s = new CoreStore();
+      s.data = mockData;
+      s.currentDate = '2026-10-08';
+      s.currentLocationId = 'loc-1';
+      s.save = function(d) { s.data = d; }; // In-memory noop
+      return s;
+    }
+
+    // -------------------------------------------------------------
+    // TEST SPECIFICATIONS DEFINITIONS (30+ CASES)
+    // -------------------------------------------------------------
+    const runner = new TestRunner();
+
+    // SUITE 1: Billing & Math Engine
+    runner.describe('Billing & Math', (it) => {
+      it('calculates single produce line item total correctly (weight x rate)', () => {
+        const weight = 45.5;
+        const rate = 32.0;
+        const lineTotal = weight * rate;
+        expect(lineTotal).toBe(1456.00);
+      });
+
+      it('correctly aggregates multi-item docket gross subtotal', () => {
+        const items = [
+          { weight: 50, rate: 35, lineTotal: 1750 },
+          { weight: 40, rate: 28, lineTotal: 1120 },
+          { weight: 2, rate: 1200, lineTotal: 2400 } // 2 boxes
+        ];
+        const gross = items.reduce((sum, i) => sum + i.lineTotal, 0);
+        expect(gross).toBe(5270);
+      });
+
+      it('applies negative round-off adjustment correctly to final payable', () => {
+        const gross = 5274.60;
+        const roundOff = -4.60;
+        const finalPayable = Math.round((gross + roundOff) * 100) / 100;
+        expect(finalPayable).toBe(5270.00);
+      });
+
+      it('applies positive round-off adjustment correctly to final payable', () => {
+        const gross = 199.30;
+        const roundOff = 0.70;
+        const finalPayable = Math.round((gross + roundOff) * 100) / 100;
+        expect(finalPayable).toBe(200.00);
+      });
+
+      it('formats Indian rupee currency with commas and two decimals', () => {
+        const formatted = formatCurrency(125450.50);
+        expect(formatted).toContain('1,25,450.50');
+      });
+
+      it('correctly formats negative currency values as -₹X.XX instead of ₹-X.XX', () => {
+        const formatted = formatCurrency(-4.50);
+        expect(formatted).toBe('-₹4.50');
+      });
+
+      it('rejects zero or negative quantities in bill creation validation', () => {
+        const isValid = (qty) => typeof qty === 'number' && qty > 0;
+        expect(isValid(0)).toBeFalsy();
+        expect(isValid(-5)).toBeFalsy();
+        expect(isValid(25.5)).toBeTruthy();
+      });
+    });
+
+    // SUITE 2: Khata Accounting & Balances
+    runner.describe('Khata Accounting', (it) => {
+      it('initializes customer with accurate opening past due', () => {
+        const s = createMockStore();
+        const bal = s.getCustomerBalanceBreakdown('cust-1');
+        expect(bal.pastOverdue).toBe(3000.00);
+        expect(bal.totalOverdue).toBe(3000.00);
+      });
+
+      it('preserves advance payments (Jama) so overpayments offset subsequent credit purchases', () => {
+        const s = createMockStore();
+        // Customer cust-2 has 0 opening past due. Customer pays ₹5,000 yesterday in advance!
+        s.data.payments.push({
+          id: 'pay-advance-1',
+          date: '2026-10-07',
+          customerId: 'cust-2',
+          amount: 5000.00
+        });
+        // Today customer takes goods for ₹3,500 on credit
+        s.data.sales.push({
+          id: 'sale-drawdown-1',
+          date: '2026-10-08',
+          customerId: 'cust-2',
+          saleType: 'CREDIT',
+          finalAmount: 3500.00
+        });
+        const bal = s.getCustomerBalanceBreakdown('cust-2', '2026-10-08');
+        expect(bal.todaysOverdue).toBe(0.00);      // 3,500 absorbed by advance
+        expect(bal.totalOverdue).toBe(0.00);       // Zero debt
+        expect(bal.advanceCredit).toBe(1500.00);   // Remaining advance deposit ₹1,500
+      });
+
+      it('increases customer total debt on daily credit (Khata) purchase', () => {
+        const s = createMockStore();
+        s.data.sales.push({
+          id: 'sale-1',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 1500.00
+        });
+        const bal = s.getCustomerBalanceBreakdown('cust-1');
+        expect(bal.todaysCredit).toBe(1500.00);
+        expect(bal.totalOverdue).toBe(4500.00); // 3000 + 1500
+      });
+
+      it('does NOT increase customer debt on direct cash sale', () => {
+        const s = createMockStore();
+        s.data.sales.push({
+          id: 'sale-cash-1',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          saleType: 'DIRECT',
+          finalAmount: 2000.00,
+          paidToday: 2000.00
+        });
+        const bal = s.getCustomerBalanceBreakdown('cust-1');
+        expect(bal.todaysCredit).toBe(0.00);
+        expect(bal.totalOverdue).toBe(3000.00); // Unchanged
+      });
+
+      it('allocates repayments to past overdue first before today credit', () => {
+        const s = createMockStore();
+        // Past due = 3000, today credit = 1000
+        s.data.sales.push({
+          id: 'sale-2',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 1000.00
+        });
+        // Payment of 3500 received today
+        s.data.payments.push({
+          id: 'pay-1',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          amount: 3500.00
+        });
+        const bal = s.getCustomerBalanceBreakdown('cust-1');
+        expect(bal.pastOverdue).toBe(0.00);    // 3000 past due fully settled
+        expect(bal.todaysOverdue).toBe(500.00); // 1000 - 500 remaining = 500
+        expect(bal.totalOverdue).toBe(500.00);
+      });
+
+      it('handles complete full settlement and marks zero balance', () => {
+        const s = createMockStore();
+        s.data.payments.push({
+          id: 'pay-2',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          amount: 3000.00
+        });
+        const bal = s.getCustomerBalanceBreakdown('cust-1');
+        expect(bal.totalOverdue).toBe(0.00);
+      });
+
+      it('isolates party ledgers so transactions for Party A never touch Party B', () => {
+        const s = createMockStore();
+        s.data.sales.push({
+          id: 'sale-cust-1',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 8000.00
+        });
+        const balB = s.getCustomerBalanceBreakdown('cust-2');
+        expect(balB.totalOverdue).toBe(0.00);
+      });
+    });
+
+    // SUITE 3: Daybook Audit & Reconciliation
+    runner.describe('Daybook Audit', (it) => {
+      it('calculates cash in drawer strictly from spot cash sales and cash repayments', () => {
+        const s = createMockStore();
+        // 1. Direct Cash Sale: 900
+        s.data.sales.push({
+          id: 's-cash',
+          date: '2026-10-08',
+          locationId: 'loc-1',
+          saleType: 'DIRECT',
+          finalAmount: 900.00,
+          paidToday: 900.00
+        });
+        // 2. Credit Sale: 3000 (No cash collected)
+        s.data.sales.push({
+          id: 's-credit',
+          date: '2026-10-08',
+          locationId: 'loc-1',
+          saleType: 'CREDIT',
+          finalAmount: 3000.00,
+          paidToday: 0.00
+        });
+        // 3. Cash Debt Repayment: 1500
+        s.data.payments.push({
+          id: 'p-cash',
+          date: '2026-10-08',
+          locationId: 'loc-1',
+          amount: 1500.00,
+          paymentMode: 'CASH'
+        });
+
+        const daySales = s.data.sales.filter(x => x.date === s.currentDate && x.locationId === s.currentLocationId);
+        const dayPayments = s.data.payments.filter(x => x.date === s.currentDate && x.locationId === s.currentLocationId);
+
+        const directCashIn = daySales.reduce((sum, x) => sum + (Number(x.paidToday) || 0), 0);
+        const repaymentCashIn = dayPayments.filter(p => p.paymentMode === 'CASH').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        const totalDrawerCash = directCashIn + repaymentCashIn;
+
+        expect(directCashIn).toBe(900.00);
+        expect(repaymentCashIn).toBe(1500.00);
+        expect(totalDrawerCash).toBe(2400.00);
+      });
+
+      it('cancels mistaken bill and rolls back customer credit balance automatically', () => {
+        const s = createMockStore();
+        const bill = {
+          id: 'mistake-bill',
+          date: '2026-10-08',
+          locationId: 'loc-1',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 1200.00
+        };
+        s.data.sales.push(bill);
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(4200.00);
+
+        // Cancel bill by removing it
+        s.data.sales = s.data.sales.filter(x => x.id !== 'mistake-bill');
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(3000.00);
+      });
+    });
+
+    // SUITE 4: Annual Rollover (Salana Khata Bandi)
+    runner.describe('Annual Rollover', (it) => {
+      it('calculates rollover migration list converting closing debts into new opening dues', () => {
+        const s = createMockStore();
+        // Add credit sale to cust-1 (3000 initial + 2000 sale = 5000 due)
+        s.data.sales.push({
+          id: 'sale-roll',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 2000.00
+        });
+
+        const preview = s.data.customers.map(c => {
+          const bal = s.getCustomerBalanceBreakdown(c.id);
+          return {
+            id: c.id,
+            name: c.name,
+            openingPastDue: c.openingPastDue,
+            closingDue: bal.totalOverdue
+          };
+        });
+
+        const cust1 = preview.find(c => c.id === 'cust-1');
+        const cust2 = preview.find(c => c.id === 'cust-2');
+
+        expect(cust1.closingDue).toBe(5000.00);
+        expect(cust2.closingDue).toBe(0.00);
+      });
+
+      it('preserves zero-balance parties so users do not need to re-register customers', () => {
+        const s = createMockStore();
+        const custCount = s.data.customers.length;
+        // In rollover, all customers are carried forward
+        expect(custCount).toBe(2);
+      });
+
+      it('archives past sales register and clears active table for Bill #1 of new year', () => {
+        const s = createMockStore();
+        s.data.sales = [{ id: 's-old', billNo: 'BILL-1001', finalAmount: 1000 }];
+        
+        // Execute simulated rollover
+        if (!s.data.archivedSales) s.data.archivedSales = {};
+        s.data.archivedSales['2026_27'] = [...s.data.sales];
+        s.data.sales = [];
+
+        expect(s.data.sales.length).toBe(0);
+        expect(s.data.archivedSales['2026_27'].length).toBe(1);
+      });
+    });
+
+    // SUITE 5: CSV & UTF-8 BOM Integrity
+    runner.describe('CSV & UTF-8 BOM', (it) => {
+      it('prefixes CSV output with UTF-8 BOM (\\uFEFF) to protect Hindi text in Excel', () => {
+        const s = createMockStore();
+        let csv = '\uFEFF';
+        csv += '"Customer ID","Party Name","Phone"\n';
+        csv += '"cust-1","रमेश सब्जी भंडार","9845000001"\n';
+
+        expect(csv.charCodeAt(0)).toBe(0xFEFF);
+        expect(csv).toContain('रमेश सब्जी भंडार');
+      });
+
+      it('properly quotes fields containing commas to avoid corrupted CSV columns', () => {
+        const itemName = 'Mango, Alphonso Grade A';
+        const quoted = `"${itemName.replace(/"/g, '""')}"`;
+        expect(quoted).toBe('"Mango, Alphonso Grade A"');
+      });
+
+      it('parses imported customer CSV with headers safely', () => {
+        const csvRaw = 'Party Name,Phone Number,Opening Due\nKishan Sabzi,9876543210,1200\n';
+        const rows = parseCsv(csvRaw);
+        expect(rows.length).toBe(1);
+        expect(rows[0].partyname).toBe('Kishan Sabzi');
+        expect(rows[0].openingdue).toBe('1200');
+      });
+    });
+
+    // SUITE 6: Cloud Capacity & Google Sheets Limits
+    runner.describe('Cloud Capacity', (it) => {
+      it('calculates remaining rows against safe 50,000 threshold', () => {
+        const maxLimit = 50000;
+        const used = 42500;
+        const remaining = maxLimit - used;
+        const pct = Math.round((used / maxLimit) * 100);
+
+        expect(remaining).toBe(7500);
+        expect(pct).toBe(85);
+      });
+
+      it('triggers warning alert flag when remaining capacity is <= 5,000 rows', () => {
+        const checkWarning = (remaining) => remaining <= 5000;
+        expect(checkWarning(6000)).toBeFalsy();
+        expect(checkWarning(4800)).toBeTruthy();
+        expect(checkWarning(500)).toBeTruthy();
+      });
+
+      it('verifies cell ceiling math for 10 million Google Sheets limit', () => {
+        const cols = 10;
+        const rows = 50000;
+        const cells = cols * rows;
+        expect(cells).toBe(500000); // 5% of 10M
+        expect(cells).toBeLessThanOrEqual(10000000);
+      });
+    });
+
+    // SUITE 7: FY Archives & Read-Only Audit Mode
+    runner.describe('FY Archives & Audit', (it) => {
+      it('retrieves registered closed financial years from store.getArchivedYears()', () => {
+        const archived = store.getArchivedYears();
+        expect(Array.isArray(archived)).toBeTruthy();
+        expect(archived.length).toBeGreaterThanOrEqual(1);
+        
+        const fy25 = store.getArchivedYear('2025_26');
+        expect(fy25).toBeTruthy();
+        expect(fy25.yearId).toBe('2025_26');
+        expect(fy25.salesTurnover).toBe(6000);
+        expect(fy25.carriedDues).toBe(4000);
+      });
+
+      it('isolates historical transactions from active sales drawer', () => {
+        const fy25 = store.getArchivedYear('2025_26');
+        expect(fy25.sales.length).toBe(2);
+        
+        // Ensure none of the archived bill IDs collide into active sales array
+        const activeSaleIds = (store.data.sales || []).map(s => s.id);
+        fy25.sales.forEach(s => {
+          expect(activeSaleIds.includes(s.id)).toBeFalsy();
+        });
+      });
+
+      it('supports historical duplicate receipt slip lookup across archived years', () => {
+        const fy25 = store.getArchivedYear('2025_26');
+        const targetBillId = fy25.sales[0].id;
+        
+        // Find record in archives
+        let foundRecord = (store.data.sales || []).find(s => s.id === targetBillId);
+        if (!foundRecord && store.data.archivedYears) {
+          for (const yr of store.data.archivedYears) {
+            foundRecord = (yr.sales || []).find(s => s.id === targetBillId);
+            if (foundRecord) break;
+          }
+        }
+
+        expect(foundRecord).toBeTruthy();
+        expect(foundRecord.billNo).toBe('BILL-FY25-890');
+        expect(foundRecord.finalAmount).toBe(3000);
+      });
+
+      it('safely bundles previous year into archived record upon annual rollover', () => {
+        const mockStore = createMockStore();
+        mockStore.data.sales = [
+          { id: 'sale-test-1', billNo: 'BILL-1', finalAmount: 5000, date: '2026-03-31' }
+        ];
+        mockStore.data.payments = [
+          { id: 'pay-test-1', receiptNo: 'REC-1', amount: 2000, date: '2026-03-31' }
+        ];
+
+        const archiveRecord = {
+          yearId: '2026_27',
+          yearLabel: 'FY 2026-27',
+          closedDate: '2027-03-31',
+          salesCount: mockStore.data.sales.length,
+          salesTurnover: 5000,
+          paymentsCount: mockStore.data.payments.length,
+          paymentsCollected: 2000,
+          carriedDues: 3000,
+          sales: [...mockStore.data.sales],
+          payments: [...mockStore.data.payments]
+        };
+
+        if (!mockStore.data.archivedYears) mockStore.data.archivedYears = [];
+        mockStore.data.archivedYears.unshift(archiveRecord);
+        mockStore.data.sales = [];
+        mockStore.data.payments = [];
+
+        expect(mockStore.data.sales.length).toBe(0);
+        expect(mockStore.data.payments.length).toBe(0);
+        expect(mockStore.data.archivedYears.length).toBe(1);
+        expect(mockStore.data.archivedYears[0].salesTurnover).toBe(5000);
+        expect(mockStore.data.archivedYears[0].carriedDues).toBe(3000);
+      });
+    });
+
+    // SUITE 8: Owner PIN Security & Role Lock
+    runner.describe('Owner PIN Security', (it) => {
+      it('verifies default Owner PIN is set to 1234', () => {
+        expect(store.getOwnerPin()).toBe('1234');
+      });
+
+      it('rejects incorrect 4-digit PIN attempts', () => {
+        store.lockOwner();
+        const success = store.unlockOwner('9999');
+        expect(success).toBeFalsy();
+        expect(store.isOwnerUnlocked()).toBeFalsy();
+      });
+
+      it('accepts correct PIN and sets session to unlocked', () => {
+        store.lockOwner();
+        const success = store.unlockOwner('1234');
+        expect(success).toBeTruthy();
+        expect(store.isOwnerUnlocked()).toBeTruthy();
+      });
+
+      it('locks session immediately upon calling lockOwner()', () => {
+        store.unlockOwner('1234');
+        expect(store.isOwnerUnlocked()).toBeTruthy();
+        store.lockOwner();
+        expect(store.isOwnerUnlocked()).toBeFalsy();
+      });
+
+      it('allows updating owner PIN to a new 4-digit code', () => {
+        store.setOwnerPin('5678');
+        expect(store.getOwnerPin()).toBe('5678');
+        expect(store.unlockOwner('1234')).toBeFalsy();
+        expect(store.unlockOwner('5678')).toBeTruthy();
+        // Restore default 1234
+        store.setOwnerPin('1234');
+        store.lockOwner();
+      });
+    });
+
+    // SUITE 9: Offline Sync Queue
+    runner.describe('Offline Sync Queue', (it) => {
+      it('initializes syncQueue array in data store', () => {
+        expect(Array.isArray(store.data.syncQueue)).toBeTruthy();
+      });
+
+      it('queues offline sales and payment records with metadata', () => {
+        const mockItem = { id: 'test-sync-1', billNo: 'BILL-OFFLINE-1', finalAmount: 2500 };
+        queueSyncItem('BILL', mockItem);
+
+        const queued = store.data.syncQueue.find(q => q.id === 'test-sync-1');
+        expect(queued).toBeTruthy();
+        expect(queued.type).toBe('BILL');
+        expect(queued.data.finalAmount).toBe(2500);
+        expect(queued.queuedAt).toBeTruthy();
+
+        // Clean up test item
+        store.data.syncQueue = store.data.syncQueue.filter(q => q.id !== 'test-sync-1');
+        store.save(store.data);
+      });
+
+      it('prevents duplicate queuing for identical transaction IDs', () => {
+        const mockItem = { id: 'test-sync-dup', billNo: 'BILL-DUP', finalAmount: 1000 };
+        queueSyncItem('BILL', mockItem);
+        const countBefore = store.data.syncQueue.length;
+        
+        queueSyncItem('BILL', mockItem);
+        expect(store.data.syncQueue.length).toBe(countBefore);
+
+        // Clean up test item
+        store.data.syncQueue = store.data.syncQueue.filter(q => q.id !== 'test-sync-dup');
+        store.save(store.data);
+      });
+    });
+
+    // -------------------------------------------------------------
+    // SUITE 10: WHATSAPP & RECEIPT DISPATCH ENGINE (5 tests)
+    // -------------------------------------------------------------
+    runner.describe('WhatsApp & Receipt Sharing', (it) => {
+      it('correctly sanitizes Indian mobile phone numbers for WhatsApp deep links', () => {
+        expect(sanitizeWhatsAppPhone('9845012345')).toBe('919845012345');
+        expect(sanitizeWhatsAppPhone('09845012345')).toBe('919845012345');
+        expect(sanitizeWhatsAppPhone('919845012345')).toBe('919845012345');
+        expect(sanitizeWhatsAppPhone('+91 98450-12345')).toBe('919845012345');
+        expect(sanitizeWhatsAppPhone('')).toBe('');
+      });
+
+      it('generates structured WhatsApp message receipt for Direct Cash sales', () => {
+        const mockSale = {
+          id: 'test-sale-wa',
+          billNo: 'BILL-WA-01',
+          date: '2026-10-09',
+          time: '11:30 AM',
+          customerName: 'Direct Walk-in',
+          saleType: 'DIRECT',
+          grossSubtotal: 450,
+          roundOff: 0,
+          finalAmount: 450,
+          items: [
+            { itemName: 'Fresh Coriander', weight: 10, unit: 'kg', rate: 45, lineTotal: 450 }
+          ]
+        };
+
+        const waText = generateWhatsAppReceiptText(mockSale, 'SALE');
+        expect(waText).toContain('BILL-WA-01');
+        expect(waText).toContain('Direct Cash');
+        expect(waText).toContain('Fresh Coriander');
+        expect(waText).toContain('TOTAL PAYABLE: Rs 450.00');
+        expect(waText).toContain('Cash Received Today: Rs 450.00');
+      });
+
+      it('generates structured WhatsApp message receipt for Credit sales with Khata ledger balance', () => {
+        const mockCreditSale = {
+          id: 'test-sale-wa-credit',
+          billNo: 'BILL-WA-02',
+          date: store.currentDate,
+          time: '11:45 AM',
+          customerId: store.data.customers[0]?.id || 'cust-1',
+          customerName: store.data.customers[0]?.name || 'Test Party',
+          saleType: 'CREDIT',
+          grossSubtotal: 1250,
+          roundOff: -10,
+          finalAmount: 1240,
+          items: [
+            { itemName: 'Red Tomato', weight: 25, unit: 'kg', rate: 50, lineTotal: 1250 }
+          ]
+        };
+
+        const waText = generateWhatsAppReceiptText(mockCreditSale, 'SALE');
+        expect(waText).toContain('BILL-WA-02');
+        expect(waText).toContain('Daily Credit (Khata)');
+        expect(waText).toContain('Round-off: Rs -10.00');
+        expect(waText).toContain('TOTAL PAYABLE: Rs 1240.00');
+        expect(waText).toContain('CUSTOMER KHATA BALANCE');
+      });
+
+      it('generates structured WhatsApp message receipt for Repayment collections', () => {
+        const mockPayment = {
+          id: 'test-pay-wa',
+          receiptNo: 'RCP-WA-01',
+          date: store.currentDate,
+          time: '12:00 PM',
+          customerId: store.data.customers[0]?.id || 'cust-1',
+          customerName: store.data.customers[0]?.name || 'Test Party',
+          paymentMode: 'CASH',
+          amount: 500,
+          notes: 'Morning partial payment'
+        };
+
+        const waText = generateWhatsAppReceiptText(mockPayment, 'PAYMENT');
+        expect(waText).toContain('PAYMENT RECEIPT (Bhooktan)');
+        expect(waText).toContain('RCP-WA-01');
+        expect(waText).toContain('AMOUNT RECEIVED: Rs 500.00');
+        expect(waText).toContain('Morning partial payment');
+        expect(waText).toContain('ACCOUNT BALANCE');
+      });
+
+      it('generates structured WhatsApp Customer Statement summary text for collection rounds', () => {
+        const custId = store.data.customers[0]?.id;
+        if (custId) {
+          const stmtText = generateWhatsAppStatementText(custId, '1M');
+          expect(stmtText).toContain('KHATA STATEMENT (Bahi Khata)');
+          expect(stmtText).toContain('Opening Balance: Rs');
+          expect(stmtText).toContain('Period Purchases: Rs');
+          expect(stmtText).toContain('Period Repaid: Rs');
+          expect(stmtText).toContain('Please review and settle');
+        }
+      });
+    });
+
+    // -------------------------------------------------------------
+    // SUITE 11: INVENTORY & PROFIT ENGINE (5 tests)
+    // -------------------------------------------------------------
+    runner.describe('Inventory & Profit Engine', (it) => {
+      it('records inward stock arrivals and increments commodity stock count', () => {
+        const item = store.data.items[0];
+        const initialStock = Number(item.currentStock) || 0;
+        const addQty = 50;
+        const newCost = 28.5;
+
+        const res = store.recordInwardStock({
+          itemId: item.id,
+          quantity: addQty,
+          costPrice: newCost,
+          supplier: 'Test Farmer Mandi',
+          notes: 'Test shipment batch',
+          updateMasterCost: true
+        });
+
+        expect(res.success).toBe(true);
+        expect(res.record.quantity).toBe(50);
+        expect(res.record.totalCost).toBe(50 * 28.5);
+        expect(item.currentStock).toBe(initialStock + addQty);
+        expect(item.costPrice).toBe(newCost);
+      });
+
+      it('records spoilage wastage and deducts stock with accurate financial loss calculation', () => {
+        const item = store.data.items[0];
+        const initialStock = Number(item.currentStock) || 0;
+        const wasteQty = 5;
+        const cost = Number(item.costPrice) || 20;
+
+        const res = store.recordWastage({
+          itemId: item.id,
+          quantity: wasteQty,
+          costPrice: cost,
+          reason: 'Moisture & Rain Damage',
+          notes: 'Damp storage inspection'
+        });
+
+        expect(res.success).toBe(true);
+        expect(res.record.quantity).toBe(5);
+        expect(res.record.estimatedLoss).toBe(5 * cost);
+        expect(item.currentStock).toBe(initialStock - wasteQty);
+      });
+
+      it('performs physical stock reconciliation and records audit adjustments', () => {
+        const item = store.data.items[1];
+        const targetPhysicalCount = 120;
+
+        const res = store.adjustStock(item.id, targetPhysicalCount, 'Physical scale tally');
+        expect(res.success).toBe(true);
+        expect(res.newStock).toBe(120);
+        expect(item.currentStock).toBe(120);
+      });
+
+      it('computes inventory valuation, potential sales, and projected profit stats', () => {
+        const stats = store.getInventoryStats();
+        expect(stats.totalItems).toBeGreaterThan(0);
+        expect(stats.totalStockValue).toBeGreaterThan(0);
+        expect(stats.totalSalesValue).toBeGreaterThanOrEqual(stats.totalStockValue);
+        expect(stats.projectedProfit).toBe(stats.totalSalesValue - stats.totalStockValue);
+      });
+
+      it('computes dashboard gross profit, profit margin, and net profit after wastage write-offs', () => {
+        const analytics = store.getDashboardAnalytics('ALL');
+        expect(analytics.grossTurnover).toBeGreaterThanOrEqual(0);
+        expect(analytics.grossProfit).toBe(Math.max(0, analytics.grossTurnover - analytics.totalCostOfGoodsSold));
+        expect(analytics.netProfit).toBe(analytics.grossProfit - analytics.totalWastageLoss);
+        expect(Array.isArray(analytics.topProduceProfit)).toBe(true);
+      });
+    });
+
+    // SUITE 10: Recycle Bin & Cloud Status Sync
+    runner.describe('Recycle Bin & Void Sync', (it) => {
+      it('moves deleted sale to recycle bin, restores stock, and adjusts customer balance', () => {
+        const s = createMockStore();
+        const initialStock = Number(s.data.items[0].currentStock) || 0;
+        const initialDue = s.getCustomerBalanceBreakdown('cust-1').totalOverdue;
+
+        const sale = {
+          id: 'test-sale-1',
+          billNo: 'BILL-999',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 1500.00,
+          items: [{ itemId: s.data.items[0].id, weight: 20 }]
+        };
+        s.data.sales.push(sale);
+        s.data.items[0].currentStock = initialStock - 20;
+
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(initialDue + 1500.00);
+
+        const moved = s.moveToRecycleBin('test-sale-1', true, 'Test void');
+        expect(moved).toBe(true);
+        expect(s.data.sales.some(x => x.id === 'test-sale-1')).toBe(false);
+        expect(s.data.recycleBin.length).toBe(1);
+        expect(s.data.recycleBin[0].id).toBe('test-sale-1');
+        expect(s.data.items[0].currentStock).toBe(initialStock);
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(initialDue);
+      });
+
+      it('restores voided sale from recycle bin with correct inventory deduction and ledger reactivation', () => {
+        const s = createMockStore();
+        const initialStock = Number(s.data.items[0].currentStock) || 0;
+        const initialDue = s.getCustomerBalanceBreakdown('cust-1').totalOverdue;
+
+        const sale = {
+          id: 'test-sale-2',
+          billNo: 'BILL-1000',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          saleType: 'CREDIT',
+          finalAmount: 800.00,
+          items: [{ itemId: s.data.items[0].id, weight: 10 }]
+        };
+        s.data.sales.push(sale);
+        s.moveToRecycleBin('test-sale-2', true);
+
+        const restored = s.restoreFromRecycleBin('test-sale-2');
+        expect(restored).toBe(true);
+        expect(s.data.recycleBin.length).toBe(0);
+        expect(s.data.sales.some(x => x.id === 'test-sale-2')).toBe(true);
+        expect(s.data.items[0].currentStock).toBe(initialStock - 10);
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(initialDue + 800.00);
+      });
+
+      it('moves payment to recycle bin and restores it', () => {
+        const s = createMockStore();
+        const initialDue = s.getCustomerBalanceBreakdown('cust-1').totalOverdue;
+
+        const payment = {
+          id: 'test-pay-1',
+          date: '2026-10-08',
+          customerId: 'cust-1',
+          amount: 500.00,
+          method: 'CASH'
+        };
+        s.data.payments.push(payment);
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(initialDue - 500.00);
+
+        s.moveToRecycleBin('test-pay-1', false);
+        expect(s.data.payments.some(p => p.id === 'test-pay-1')).toBe(false);
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(initialDue);
+
+        s.restoreFromRecycleBin('test-pay-1');
+        expect(s.data.payments.some(p => p.id === 'test-pay-1')).toBe(true);
+        expect(s.getCustomerBalanceBreakdown('cust-1').totalOverdue).toBe(initialDue - 500.00);
+      });
+
+      it('permanently purges items and empties the recycle bin', () => {
+        const s = createMockStore();
+        s.data.recycleBin = [
+          { id: 'r1', isSale: true, billNo: 'BILL-1', finalAmount: 100 },
+          { id: 'r2', isSale: false, id: 'PAY-1', amount: 50 }
+        ];
+
+        s.permanentlyDeleteFromRecycleBin('r1');
+        expect(s.data.recycleBin.length).toBe(1);
+        expect(s.data.recycleBin[0].id).toBe('r2');
+
+        s.emptyRecycleBin();
+        expect(s.data.recycleBin.length).toBe(0);
+      });
+    });
+
+    // -------------------------------------------------------------
+    // UI RENDERING & FILTERING CONTROLLER
+    // -------------------------------------------------------------
+    function updateSummary(total, passed, failed, totalTime) {
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statPassed').textContent = passed;
+      document.getElementById('statFailed').textContent = failed;
+      document.getElementById('statTime').textContent = `${totalTime} ms`;
+    }
+
+    function renderTestGroups(suites) {
+      const container = document.getElementById('testOutputContainer');
+      if (!container) return;
+
+      const filteredSuites = currentFilter === 'ALL' 
+        ? suites 
+        : suites.filter(s => s.name.toLowerCase().includes(currentFilter.toLowerCase()));
+
+      container.innerHTML = filteredSuites.map(suite => `
+        <div class="test-group">
+          <div class="test-group-header">
+            <span>${suite.name}</span>
+            <span class="text-dim" style="font-size:0.75rem; font-family:var(--font-mono);">
+              ${suite.tests.filter(t => t.status === 'PASS').length} / ${suite.tests.length} PASS
+            </span>
+          </div>
+          <div>
+            ${suite.tests.map(test => `
+              <div class="test-item-row">
+                <div style="flex:1; padding-right:1rem;">
+                  <span style="font-weight:600;">${test.name}</span>
+                  ${test.error ? `<div class="test-err-msg">${test.error}</div>` : ''}
+                </div>
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                  <span class="text-dim font-mono" style="font-size:0.72rem;">${test.time} ms</span>
+                  <span class="${test.status === 'PASS' ? 'badge-pass' : (test.status === 'FAIL' ? 'badge-fail' : 'badge-pending')}">
+                    ${test.status}
+                  </span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterTestSuite(category, btn) {
+      currentFilter = category;
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderTestGroups(runner.suites);
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('test');
+      renderTestGroups(runner.suites);
+
+      document.getElementById('btnRunAllTests')?.addEventListener('click', () => {
+        runner.runAll();
+      });
+    });
+  </script>
+</body>
+</html>

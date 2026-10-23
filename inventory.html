@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Inventory &amp; Stock Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Standard Unified Shared Header -->
+  <header id="sharedHeader" class="app-header"></header>
+
+  <main class="page-container">
+    
+    <!-- Top Summary Ribbon -->
+    <div class="summary-strip" id="inventorySummaryStrip">
+      <div class="strip-card">
+        <span class="strip-label">Total Stock Valuation (लागत मूल्य)</span>
+        <div class="strip-val font-mono" id="statStockValuation">₹0.00</div>
+        <small class="text-dim" id="statItemsCount">0 produce varieties</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Potential Sales Value (बिक्री मूल्य)</span>
+        <div class="strip-val font-mono text-main" id="statSalesValuation">₹0.00</div>
+        <small class="text-dim">At current mandi selling rates</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Projected Gross Profit (अनुमानित मुनाफा)</span>
+        <div class="strip-val font-mono text-success" id="statProjectedProfit">₹0.00</div>
+        <small class="text-dim" id="statMarginPct">0% projected margin</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Low / Out of Stock (स्टॉक चेतावनी)</span>
+        <div class="strip-val font-mono text-warning" id="statLowStock">0</div>
+        <small class="text-dim" id="statOutStockSub">0 critically out of stock</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Today's Spoilage Loss (खराब माल नुकसान)</span>
+        <div class="strip-val font-mono text-danger" id="statTodayWastage">₹0.00</div>
+        <small class="text-dim" id="statTodayWastageQty">0 kg written off today</small>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" id="tabBtn-stock" onclick="switchTab('stock')">
+        Mandi Stock Board (स्टॉक रजिस्टर)
+      </button>
+      <button type="button" class="tab-btn" id="tabBtn-inward" onclick="switchTab('inward')">
+        Inward Arrivals Register (माल आमद)
+      </button>
+      <button type="button" class="tab-btn" id="tabBtn-wastage" onclick="switchTab('wastage')">
+        Wastage &amp; Spoilage Register (खराब माल)
+      </button>
+    </div>
+
+    <!-- ====================================================================
+         TAB 1: MANDI STOCK BOARD
+         ==================================================================== -->
+    <div id="tab-stock" class="tab-pane active">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Live Produce Stock Master</h2>
+          <span class="text-dim" style="font-size:0.75rem;">Real-time inventory levels, purchase cost rates, and margin tracking</span>
+        </div>
+        <div class="page-toolbar">
+          <input type="text" id="stockSearchInput" class="search-input" placeholder="Search commodity, code, category...">
+          <select id="stockCategoryFilter" class="header-select">
+            <option value="ALL">All Categories</option>
+            <option value="vegetable">Vegetables (सब्जियां)</option>
+            <option value="fruit">Fruits (फल)</option>
+            <option value="grain">Grains (अनाज)</option>
+            <option value="other">Other Commodities</option>
+          </select>
+          <select id="stockStatusFilter" class="header-select">
+            <option value="ALL">All Stock Levels</option>
+            <option value="HEALTHY">In Stock (Healthy)</option>
+            <option value="LOW">Low Stock Alert (&lt; Threshold)</option>
+            <option value="OUT">Out of Stock (Zero)</option>
+          </select>
+          <button type="button" class="btn-primary" onclick="openInwardModal()">+ Inward Stock</button>
+          <button type="button" class="btn-secondary" onclick="openWastageModal()">+ Log Wastage</button>
+          <button type="button" class="btn-ghost" onclick="exportStockMasterCsv()">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Commodity / Produce Item</th>
+              <th>Category</th>
+              <th>Unit</th>
+              <th style="text-align:right;">Current Stock</th>
+              <th>Stock Status</th>
+              <th style="text-align:right;">Cost Rate (खरेदी)</th>
+              <th style="text-align:right;">Selling Rate (बिक्री)</th>
+              <th style="text-align:right;">Margin (₹ / %)</th>
+              <th style="text-align:right;">Stock Valuation</th>
+              <th style="text-align:center;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         TAB 2: INWARD STOCK ARRIVALS REGISTER (MAAL AAMAD)
+         ==================================================================== -->
+    <div id="tab-inward" class="tab-pane">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Inward Stock Register (माल आमद)</h2>
+          <span class="text-dim" style="font-size:0.75rem;">Log of all incoming produce shipments, supplier lots, and purchase rates</span>
+        </div>
+        <div class="page-toolbar">
+          <input type="text" id="inwardSearchInput" class="search-input" placeholder="Search lot, supplier, commodity...">
+          <input type="date" id="inwardDateFilter" class="header-date" title="Filter by Arrival Date">
+          <select id="inwardLocFilter" class="header-select">
+            <option value="ALL">All Stalls / Counters</option>
+          </select>
+          <button type="button" class="btn-primary" onclick="openInwardModal()">+ Record Inward Stock</button>
+          <button type="button" class="btn-ghost" onclick="exportInwardsCsv()">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ref / Lot #</th>
+              <th>Date &amp; Time</th>
+              <th>Location</th>
+              <th>Commodity</th>
+              <th style="text-align:right;">Received Qty</th>
+              <th style="text-align:right;">Purchase Cost</th>
+              <th style="text-align:right;">Total Lot Cost</th>
+              <th>Supplier / Mandi Agent</th>
+              <th>Challan / Vehicle Notes</th>
+              <th style="text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="inwardTableBody">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         TAB 3: WASTAGE & SPOILAGE REGISTER (KHARAB MAAL)
+         ==================================================================== -->
+    <div id="tab-wastage" class="tab-pane">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Wastage &amp; Spoilage Register (खराब माल)</h2>
+          <span class="text-dim" style="font-size:0.75rem;">Record produce damage, rot, dehydration, and financial loss deductions</span>
+        </div>
+        <div class="page-toolbar">
+          <input type="text" id="wastageSearchInput" class="search-input" placeholder="Search reason, produce, notes...">
+          <input type="date" id="wastageDateFilter" class="header-date" title="Filter by Spoilage Date">
+          <select id="wastageLocFilter" class="header-select">
+            <option value="ALL">All Stalls / Counters</option>
+          </select>
+          <button type="button" class="btn-primary" style="background:var(--color-danger); border-color:var(--color-danger);" onclick="openWastageModal()">+ Log Spoilage Write-Off</button>
+          <button type="button" class="btn-ghost" onclick="exportWastageCsv()">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ref / Log #</th>
+              <th>Date &amp; Time</th>
+              <th>Location</th>
+              <th>Commodity</th>
+              <th style="text-align:right;">Spoiled Qty</th>
+              <th style="text-align:right;">Cost Rate</th>
+              <th style="text-align:right;">Financial Loss</th>
+              <th>Write-Off Reason</th>
+              <th>Notes / Inspection</th>
+              <th style="text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="wastageTableBody">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ====================================================================
+       MODAL 1: RECORD INWARD STOCK (+ MAAL AAMAD)
+       ==================================================================== -->
+  <div id="inwardModal" class="modal-backdrop hidden">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Inward Stock (माल आमद)</h3>
+        <button type="button" class="modal-close" onclick="closeInwardModal()">&times;</button>
+      </div>
+      <form id="inwardForm" onsubmit="handleInwardSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Produce Commodity *</label>
+            <select id="inwardItemId" class="form-input" required onchange="handleInwardItemChange()">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Received Quantity *</label>
+              <input type="number" id="inwardQty" class="form-input font-mono font-bold" min="0.1" step="0.1" required placeholder="0.00" oninput="recalcInwardTotal()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unit</label>
+              <input type="text" id="inwardUnit" class="form-input font-mono" readonly style="background:var(--bg-subtle);">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Purchase Rate (Khareed ₹) *</label>
+              <input type="number" id="inwardCostPrice" class="form-input font-mono" min="0" step="0.1" required placeholder="0.00" oninput="recalcInwardTotal()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total Lot Cost (कुल लागत)</label>
+              <input type="text" id="inwardTotalCostDisplay" class="form-input font-mono font-bold text-success" readonly value="₹0.00" style="background:var(--bg-subtle);">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
+              <input type="checkbox" id="inwardUpdateMasterCost" checked>
+              <span>Update master purchase cost price for this item</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Supplier / Farmer / Commission Agent</label>
+            <input type="text" id="inwardSupplier" class="form-input" placeholder="e.g. Nashik Onion Mandi Syndicate, Farmer Ramesh">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Arrival Date</label>
+              <input type="date" id="inwardDate" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Destination Counter / Stall</label>
+              <select id="inwardLocationId" class="form-input" required>
+                <!-- Locations populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Vehicle / Challan / Batch Notes</label>
+            <input type="text" id="inwardNotes" class="form-input" placeholder="e.g. Truck MH-15-AB-4321, 20 crates, Grade A">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" onclick="closeInwardModal()">Cancel</button>
+          <button type="submit" class="btn-primary">Save Inward Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 2: LOG WASTAGE & SPOILAGE (+ KHARAB MAAL)
+       ==================================================================== -->
+  <div id="wastageModal" class="modal-backdrop hidden">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <h3 class="modal-title">Log Wastage &amp; Spoilage (खराब माल)</h3>
+        <button type="button" class="modal-close" onclick="closeWastageModal()">&times;</button>
+      </div>
+      <form id="wastageForm" onsubmit="handleWastageSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Produce Commodity *</label>
+            <select id="wastageItemId" class="form-input" required onchange="handleWastageItemChange()">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Spoiled Quantity to Deduct *</label>
+              <input type="number" id="wastageQty" class="form-input font-mono font-bold" min="0.1" step="0.1" required placeholder="0.00" oninput="recalcWastageTotal()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unit</label>
+              <input type="text" id="wastageUnit" class="form-input font-mono" readonly style="background:var(--bg-subtle);">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Cost Rate for Loss (₹)</label>
+              <input type="number" id="wastageCostPrice" class="form-input font-mono" min="0" step="0.1" required placeholder="0.00" oninput="recalcWastageTotal()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Calculated Loss (नुकसान)</label>
+              <input type="text" id="wastageLossDisplay" class="form-input font-mono font-bold text-danger" readonly value="₹0.00" style="background:var(--bg-subtle);">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Reason for Write-Off *</label>
+            <select id="wastageReason" class="form-input" required>
+              <option value="Spoiled / Rotten">Spoiled / Rotten (सड़न / फफूंद)</option>
+              <option value="Transport Bruised / Crushed">Transport Bruised / Crushed (दबा हुआ माल)</option>
+              <option value="Moisture &amp; Rain Damage">Moisture &amp; Rain Damage (बारिश व नमी से खराब)</option>
+              <option value="Weight Shrinkage / Drying">Weight Shrinkage / Dehydration (सूखा व वजन घट)</option>
+              <option value="Overripe / Unsaleable">Overripe / Unsaleable (अत्यधिक पका हुआ)</option>
+              <option value="Handling Breakage">Handling Breakage (सफाई व छंटाई कचरा)</option>
+              <option value="Other">Other Loss Reason</option>
+            </select>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Inspection Date</label>
+              <input type="date" id="wastageDate" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Counter / Stall Location</label>
+              <select id="wastageLocationId" class="form-input" required>
+                <!-- Locations populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Inspection Notes</label>
+            <input type="text" id="wastageNotes" class="form-input" placeholder="e.g. Discarded during morning grading, rainy truck batch">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" onclick="closeWastageModal()">Cancel</button>
+          <button type="submit" class="btn-primary" style="background:var(--color-danger); border-color:var(--color-danger);">Confirm Stock Deduction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 3: STOCK AUDIT & PHYSICAL COUNT RECONCILIATION
+       ==================================================================== -->
+  <div id="adjustModal" class="modal-backdrop hidden">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <h3 class="modal-title">Physical Stock Audit (स्टॉक मिलान)</h3>
+        <button type="button" class="modal-close" onclick="closeAdjustModal()">&times;</button>
+      </div>
+      <form id="adjustForm" onsubmit="handleAdjustSubmit(event)">
+        <input type="hidden" id="adjustItemId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Produce Commodity</label>
+            <input type="text" id="adjustItemName" class="form-input" readonly style="background:var(--bg-subtle); font-weight:700;">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">System Recorded Stock</label>
+              <input type="text" id="adjustOldStock" class="form-input font-mono" readonly style="background:var(--bg-subtle);">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Physical Counted Stock *</label>
+              <input type="number" id="adjustNewStock" class="form-input font-mono font-bold" min="0" step="0.1" required oninput="recalcAdjustDifference()">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Discrepancy (अंतर)</label>
+            <input type="text" id="adjustDifferenceDisplay" class="form-input font-mono font-bold" readonly style="background:var(--bg-subtle);">
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Reconciliation Reason *</label>
+            <input type="text" id="adjustReason" class="form-input" required value="Physical stock count reconciliation" placeholder="e.g. End of day physical scale tally">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" onclick="closeAdjustModal()">Cancel</button>
+          <button type="submit" class="btn-primary">Update Master Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Nav -->
+  <nav id="sharedMobileNav" class="mobile-bottom-nav"></nav>
+
+  <!-- Application Logic -->
+  <script src="store.js?v=2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('inventory');
+      initLocationDropdowns();
+      renderInventoryPage();
+
+      // Toolbars and filters
+      document.getElementById('stockSearchInput')?.addEventListener('input', renderStockTable);
+      document.getElementById('stockCategoryFilter')?.addEventListener('change', renderStockTable);
+      document.getElementById('stockStatusFilter')?.addEventListener('change', renderStockTable);
+
+      document.getElementById('inwardSearchInput')?.addEventListener('input', renderInwardsTable);
+      document.getElementById('inwardDateFilter')?.addEventListener('change', renderInwardsTable);
+      document.getElementById('inwardLocFilter')?.addEventListener('change', renderInwardsTable);
+
+      document.getElementById('wastageSearchInput')?.addEventListener('input', renderWastageTable);
+      document.getElementById('wastageDateFilter')?.addEventListener('change', renderWastageTable);
+      document.getElementById('wastageLocFilter')?.addEventListener('change', renderWastageTable);
+
+      // Real-time synchronization events
+      window.addEventListener('inventory-updated', renderInventoryPage);
+      window.addEventListener('mandi:sale-saved', renderInventoryPage);
+      window.addEventListener('mandi:storage-sync', renderInventoryPage);
+
+      // Close modal on backdrop click or Escape key
+      ['inwardModal', 'wastageModal', 'adjustModal'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => {
+          if (e.target.id === id) {
+            document.getElementById(id)?.classList.add('hidden');
+          }
+        });
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeInwardModal();
+          closeWastageModal();
+          closeAdjustModal();
+        }
+      });
+
+      // Handle deep-link action query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const action = urlParams.get('action');
+      if (action === 'inward') {
+        openInwardModal();
+      } else if (action === 'wastage') {
+        openWastageModal();
+      }
+    });
+
+    // -------------------------------------------------------------
+    // TAB NAVIGATION
+    // -------------------------------------------------------------
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      document.getElementById(`tabBtn-${tabId}`)?.classList.add('active');
+      document.getElementById(`tab-${tabId}`)?.classList.add('active');
+    }
+
+    function initLocationDropdowns() {
+      const locs = store.data.locations || [];
+      const inwardLoc = document.getElementById('inwardLocFilter');
+      const wastageLoc = document.getElementById('wastageLocFilter');
+      const inwardModalLoc = document.getElementById('inwardLocationId');
+      const wastageModalLoc = document.getElementById('wastageLocationId');
+
+      const filterOptions = '<option value="ALL">All Stalls / Counters</option>' + 
+        locs.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+      
+      const modalOptions = locs.map(l => `<option value="${l.id}" ${l.id === store.currentLocationId ? 'selected' : ''}>${l.name}</option>`).join('');
+
+      if (inwardLoc) inwardLoc.innerHTML = filterOptions;
+      if (wastageLoc) wastageLoc.innerHTML = filterOptions;
+      if (inwardModalLoc) inwardModalLoc.innerHTML = modalOptions;
+      if (wastageModalLoc) wastageModalLoc.innerHTML = modalOptions;
+    }
+
+    // -------------------------------------------------------------
+    // MAIN PAGE RENDER
+    // -------------------------------------------------------------
+    function renderInventoryPage() {
+      renderSummaryCards();
+      renderStockTable();
+      renderInwardsTable();
+      renderWastageTable();
+    }
+
+    function renderSummaryCards() {
+      const stats = store.getInventoryStats();
+      const items = store.data.items || [];
+
+      document.getElementById('statStockValuation').textContent = formatCurrency(stats.totalStockValue);
+      document.getElementById('statItemsCount').textContent = `${items.length} produce varieties`;
+
+      document.getElementById('statSalesValuation').textContent = formatCurrency(stats.totalSalesValue);
+
+      document.getElementById('statProjectedProfit').textContent = formatCurrency(stats.projectedProfit);
+      const margin = stats.totalSalesValue > 0 ? ((stats.projectedProfit / stats.totalSalesValue) * 100).toFixed(1) : '0.0';
+      document.getElementById('statMarginPct').textContent = `${margin}% projected gross margin`;
+
+      document.getElementById('statLowStock').textContent = stats.lowStockCount + stats.outOfStockCount;
+      document.getElementById('statOutStockSub').textContent = `${stats.outOfStockCount} out of stock, ${stats.lowStockCount} below alert`;
+
+      document.getElementById('statTodayWastage').textContent = formatCurrency(stats.todayWastageLoss);
+      document.getElementById('statTodayWastageQty').textContent = `${stats.todayWastageQty} units logged today`;
+    }
+
+    // -------------------------------------------------------------
+    // TAB 1: STOCK MASTER TABLE
+    // -------------------------------------------------------------
+    function renderStockTable() {
+      const tbody = document.getElementById('stockTableBody');
+      if (!tbody) return;
+
+      const search = (document.getElementById('stockSearchInput')?.value || '').toLowerCase().trim();
+      const cat = document.getElementById('stockCategoryFilter')?.value || 'ALL';
+      const status = document.getElementById('stockStatusFilter')?.value || 'ALL';
+
+      let items = (store.data.items || []).filter(item => {
+        if (cat !== 'ALL' && (item.category || '').toLowerCase() !== cat.toLowerCase()) return false;
+        
+        const stock = Number(item.currentStock) || 0;
+        const minAlert = Number(item.minAlertStock) || 20;
+
+        if (status === 'OUT' && stock > 0) return false;
+        if (status === 'LOW' && (stock <= 0 || stock > minAlert)) return false;
+        if (status === 'HEALTHY' && stock <= minAlert) return false;
+
+        if (search) {
+          const matchName = (item.name || '').toLowerCase().includes(search);
+          const matchCode = (item.code || '').toLowerCase().includes(search);
+          const matchCat = (item.category || '').toLowerCase().includes(search);
+          if (!matchName && !matchCode && !matchCat) return false;
+        }
+
+        return true;
+      });
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-dim);">No produce items match the selected filter.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        const stock = Number(item.currentStock) || 0;
+        const minAlert = Number(item.minAlertStock) || 20;
+        const cost = Number(item.costPrice) || 0;
+        const rate = Number(item.defaultRate) || 0;
+        const marginVal = rate - cost;
+        const marginPct = rate > 0 ? ((marginVal / rate) * 100).toFixed(1) : '0.0';
+        const valuation = stock * cost;
+
+        let statusBadge = '';
+        if (stock <= 0) {
+          statusBadge = `<span class="badge badge-stock-out">Out of Stock</span>`;
+        } else if (stock <= minAlert) {
+          statusBadge = `<span class="badge badge-stock-low">Low (&le; ${minAlert} ${item.unit})</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-stock-healthy">Healthy</span>`;
+        }
+
+        const marginColor = marginVal >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+
+        return `
+          <tr>
+            <td>
+              <div class="font-bold text-main">${item.name}</div>
+              <small class="text-dim font-mono">${item.code || '--'}</small>
+            </td>
+            <td><span class="badge">${item.category || 'produce'}</span></td>
+            <td><span class="text-dim font-mono">${item.unit || 'kg'}</span></td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">
+              ${stock.toLocaleString()} <span style="font-size:0.75rem; color:var(--text-dim);">${item.unit}</span>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right; font-family:var(--font-mono);">₹${cost.toFixed(2)}</td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:600;">₹${rate.toFixed(2)}</td>
+            <td style="text-align:right; font-family:var(--font-mono); color:${marginColor};">
+              ₹${marginVal.toFixed(2)} <span style="font-size:0.72rem;">(${marginPct}%)</span>
+            </td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">
+              ${formatCurrency(valuation)}
+            </td>
+            <td style="text-align:center; white-space:nowrap;">
+              <button class="btn-ghost" style="padding:2px 6px; font-size:0.72rem;" onclick="openInwardModal('${item.id}')" title="Record Inward Stock">+ Inward</button>
+              <button class="btn-ghost" style="padding:2px 6px; font-size:0.72rem;" onclick="openAdjustModal('${item.id}')" title="Physical Stock Audit">Audit</button>
+              <button class="btn-ghost" style="padding:2px 6px; font-size:0.72rem; color:var(--color-danger);" onclick="openWastageModal('${item.id}')" title="Log Spoilage">Spoil</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------
+    // TAB 2: INWARD STOCK TABLE
+    // -------------------------------------------------------------
+    function renderInwardsTable() {
+      const tbody = document.getElementById('inwardTableBody');
+      if (!tbody) return;
+
+      const search = (document.getElementById('inwardSearchInput')?.value || '').toLowerCase().trim();
+      const date = document.getElementById('inwardDateFilter')?.value;
+      const loc = document.getElementById('inwardLocFilter')?.value || 'ALL';
+
+      let inwards = (store.data.inventoryInward || []).filter(rec => {
+        if (loc !== 'ALL' && rec.locationId !== loc) return false;
+        if (date && rec.date !== date) return false;
+        if (search) {
+          const matchItem = (rec.itemName || '').toLowerCase().includes(search);
+          const matchSup = (rec.supplier || '').toLowerCase().includes(search);
+          const matchNote = (rec.notes || '').toLowerCase().includes(search);
+          const matchId = (rec.id || '').toLowerCase().includes(search);
+          if (!matchItem && !matchSup && !matchNote && !matchId) return false;
+        }
+        return true;
+      });
+
+      if (inwards.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-dim);">No inward arrivals recorded for this selection.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = inwards.map(rec => {
+        const locObj = (store.data.locations || []).find(l => l.id === rec.locationId);
+        const locName = locObj ? (locObj.code || locObj.name) : 'Default Stall';
+        return `
+          <tr>
+            <td><span class="font-mono" style="font-size:0.75rem;">${rec.id}</span></td>
+            <td>
+              <div style="font-size:0.8rem;">${rec.date}</div>
+              <small class="text-dim font-mono">${rec.time || ''}</small>
+            </td>
+            <td><span class="badge">${locName}</span></td>
+            <td><strong>${rec.itemName}</strong></td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">
+              ${rec.quantity} <span style="font-size:0.75rem; color:var(--text-dim);">${rec.unit}</span>
+            </td>
+            <td style="text-align:right; font-family:var(--font-mono);">₹${Number(rec.costPrice).toFixed(2)}</td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:700; color:var(--color-success);">
+              ${formatCurrency(rec.totalCost)}
+            </td>
+            <td>${rec.supplier || '<span class="text-dim">--</span>'}</td>
+            <td><small class="text-muted">${rec.notes || '--'}</small></td>
+            <td style="text-align:center;">
+              <button class="btn-ghost" style="padding:2px 6px; font-size:0.7rem; color:var(--color-danger);" onclick="deleteInwardRecord('${rec.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------
+    // TAB 3: WASTAGE & SPOILAGE TABLE
+    // -------------------------------------------------------------
+    function renderWastageTable() {
+      const tbody = document.getElementById('wastageTableBody');
+      if (!tbody) return;
+
+      const search = (document.getElementById('wastageSearchInput')?.value || '').toLowerCase().trim();
+      const date = document.getElementById('wastageDateFilter')?.value;
+      const loc = document.getElementById('wastageLocFilter')?.value || 'ALL';
+
+      let records = (store.data.inventoryWastage || []).filter(rec => {
+        if (loc !== 'ALL' && rec.locationId !== loc) return false;
+        if (date && rec.date !== date) return false;
+        if (search) {
+          const matchItem = (rec.itemName || '').toLowerCase().includes(search);
+          const matchReason = (rec.reason || '').toLowerCase().includes(search);
+          const matchNote = (rec.notes || '').toLowerCase().includes(search);
+          const matchId = (rec.id || '').toLowerCase().includes(search);
+          if (!matchItem && !matchReason && !matchNote && !matchId) return false;
+        }
+        return true;
+      });
+
+      if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-dim);">No spoilage / wastage write-offs recorded for this selection.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = records.map(rec => {
+        const locObj = (store.data.locations || []).find(l => l.id === rec.locationId);
+        const locName = locObj ? (locObj.code || locObj.name) : 'Default Stall';
+        return `
+          <tr>
+            <td><span class="font-mono" style="font-size:0.75rem;">${rec.id}</span></td>
+            <td>
+              <div style="font-size:0.8rem;">${rec.date}</div>
+              <small class="text-dim font-mono">${rec.time || ''}</small>
+            </td>
+            <td><span class="badge">${locName}</span></td>
+            <td><strong>${rec.itemName}</strong></td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:700; color:var(--color-danger);">
+              ${rec.quantity} <span style="font-size:0.75rem; color:var(--text-dim);">${rec.unit}</span>
+            </td>
+            <td style="text-align:right; font-family:var(--font-mono);">₹${Number(rec.costPrice).toFixed(2)}</td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:700; color:var(--color-danger);">
+              ${formatCurrency(rec.estimatedLoss)}
+            </td>
+            <td><span class="badge badge-danger">${rec.reason || 'Spoiled'}</span></td>
+            <td><small class="text-muted">${rec.notes || '--'}</small></td>
+            <td style="text-align:center;">
+              <button class="btn-ghost" style="padding:2px 6px; font-size:0.7rem; color:var(--color-danger);" onclick="deleteWastageRecord('${rec.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------
+    // MODAL HANDLERS: INWARD STOCK
+    // -------------------------------------------------------------
+    function openInwardModal(preselectedItemId = null) {
+      const itemSelect = document.getElementById('inwardItemId');
+      const items = store.data.items || [];
+
+      itemSelect.innerHTML = items.map(i => `
+        <option value="${i.id}">${i.name} [${i.code || i.category || 'produce'}]</option>
+      `).join('');
+
+      if (preselectedItemId) {
+        itemSelect.value = preselectedItemId;
+      }
+
+      document.getElementById('inwardDate').value = store.currentDate;
+      document.getElementById('inwardLocationId').value = store.currentLocationId;
+      document.getElementById('inwardQty').value = '';
+      document.getElementById('inwardSupplier').value = '';
+      document.getElementById('inwardNotes').value = '';
+
+      handleInwardItemChange();
+      document.getElementById('inwardModal')?.classList.remove('hidden');
+      setTimeout(() => document.getElementById('inwardQty')?.focus(), 50);
+    }
+
+    function closeInwardModal() {
+      document.getElementById('inwardModal')?.classList.add('hidden');
+    }
+
+    function handleInwardItemChange() {
+      const itemId = document.getElementById('inwardItemId')?.value;
+      const item = (store.data.items || []).find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById('inwardUnit').value = item.unit || 'kg';
+      document.getElementById('inwardCostPrice').value = Number(item.costPrice || 0).toFixed(2);
+      recalcInwardTotal();
+    }
+
+    function recalcInwardTotal() {
+      const qty = Number(document.getElementById('inwardQty')?.value) || 0;
+      const cost = Number(document.getElementById('inwardCostPrice')?.value) || 0;
+      const total = qty * cost;
+      document.getElementById('inwardTotalCostDisplay').value = formatCurrency(total);
+    }
+
+    function handleInwardSubmit(e) {
+      e.preventDefault();
+      const itemId = document.getElementById('inwardItemId')?.value;
+      const qty = Number(document.getElementById('inwardQty')?.value) || 0;
+      const costPrice = Number(document.getElementById('inwardCostPrice')?.value) || 0;
+      const updateMaster = document.getElementById('inwardUpdateMasterCost')?.checked;
+      const supplier = document.getElementById('inwardSupplier')?.value.trim();
+      const notes = document.getElementById('inwardNotes')?.value.trim();
+      const date = document.getElementById('inwardDate')?.value || store.currentDate;
+      const locationId = document.getElementById('inwardLocationId')?.value || store.currentLocationId;
+
+      if (qty <= 0) {
+        alert('Quantity must be greater than zero');
+        return;
+      }
+
+      const res = store.recordInwardStock({
+        itemId,
+        quantity: qty,
+        costPrice,
+        updateMasterCost: updateMaster,
+        supplier,
+        notes,
+        date,
+        locationId
+      });
+
+      if (res.success) {
+        closeInwardModal();
+        renderInventoryPage();
+      } else {
+        alert(res.message || 'Could not record inward stock');
+      }
+    }
+
+    function deleteInwardRecord(id) {
+      if (!confirm('Are you sure you want to delete this inward stock arrival record?')) return;
+      store.deleteInwardStock(id);
+      renderInventoryPage();
+    }
+
+    // -------------------------------------------------------------
+    // MODAL HANDLERS: LOG WASTAGE
+    // -------------------------------------------------------------
+    function openWastageModal(preselectedItemId = null) {
+      const itemSelect = document.getElementById('wastageItemId');
+      const items = store.data.items || [];
+
+      itemSelect.innerHTML = items.map(i => `
+        <option value="${i.id}">${i.name} [Stock: ${i.currentStock || 0} ${i.unit || 'kg'}]</option>
+      `).join('');
+
+      if (preselectedItemId) {
+        itemSelect.value = preselectedItemId;
+      }
+
+      document.getElementById('wastageDate').value = store.currentDate;
+      document.getElementById('wastageLocationId').value = store.currentLocationId;
+      document.getElementById('wastageQty').value = '';
+      document.getElementById('wastageNotes').value = '';
+
+      handleWastageItemChange();
+      document.getElementById('wastageModal')?.classList.remove('hidden');
+      setTimeout(() => document.getElementById('wastageQty')?.focus(), 50);
+    }
+
+    function closeWastageModal() {
+      document.getElementById('wastageModal')?.classList.add('hidden');
+    }
+
+    function handleWastageItemChange() {
+      const itemId = document.getElementById('wastageItemId')?.value;
+      const item = (store.data.items || []).find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById('wastageUnit').value = item.unit || 'kg';
+      document.getElementById('wastageCostPrice').value = Number(item.costPrice || 0).toFixed(2);
+      recalcWastageTotal();
+    }
+
+    function recalcWastageTotal() {
+      const qty = Number(document.getElementById('wastageQty')?.value) || 0;
+      const cost = Number(document.getElementById('wastageCostPrice')?.value) || 0;
+      const total = qty * cost;
+      document.getElementById('wastageLossDisplay').value = formatCurrency(total);
+    }
+
+    function handleWastageSubmit(e) {
+      e.preventDefault();
+      const itemId = document.getElementById('wastageItemId')?.value;
+      const qty = Number(document.getElementById('wastageQty')?.value) || 0;
+      const costPrice = Number(document.getElementById('wastageCostPrice')?.value) || 0;
+      const reason = document.getElementById('wastageReason')?.value;
+      const notes = document.getElementById('wastageNotes')?.value.trim();
+      const date = document.getElementById('wastageDate')?.value || store.currentDate;
+      const locationId = document.getElementById('wastageLocationId')?.value || store.currentLocationId;
+
+      if (qty <= 0) {
+        alert('Spoiled quantity must be greater than zero');
+        return;
+      }
+
+      const res = store.recordWastage({
+        itemId,
+        quantity: qty,
+        costPrice,
+        reason,
+        notes,
+        date,
+        locationId
+      });
+
+      if (res.success) {
+        closeWastageModal();
+        renderInventoryPage();
+      } else {
+        alert(res.message || 'Could not record wastage write-off');
+      }
+    }
+
+    function deleteWastageRecord(id) {
+      if (!confirm('Are you sure you want to delete this wastage record?')) return;
+      store.deleteWastage(id);
+      renderInventoryPage();
+    }
+
+    // -------------------------------------------------------------
+    // MODAL HANDLERS: STOCK ADJUSTMENT
+    // -------------------------------------------------------------
+    function openAdjustModal(itemId) {
+      const item = (store.data.items || []).find(i => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById('adjustItemId').value = item.id;
+      document.getElementById('adjustItemName').value = `${item.name} (${item.unit || 'kg'})`;
+      document.getElementById('adjustOldStock').value = `${item.currentStock || 0} ${item.unit || 'kg'}`;
+      document.getElementById('adjustNewStock').value = item.currentStock || 0;
+      document.getElementById('adjustReason').value = 'Physical stock count reconciliation';
+      
+      recalcAdjustDifference();
+      document.getElementById('adjustModal')?.classList.remove('hidden');
+      setTimeout(() => document.getElementById('adjustNewStock')?.select(), 50);
+    }
+
+    function closeAdjustModal() {
+      document.getElementById('adjustModal')?.classList.add('hidden');
+    }
+
+    function recalcAdjustDifference() {
+      const itemId = document.getElementById('adjustItemId')?.value;
+      const item = (store.data.items || []).find(i => i.id === itemId);
+      if (!item) return;
+
+      const oldStock = Number(item.currentStock) || 0;
+      const newStock = Number(document.getElementById('adjustNewStock')?.value) || 0;
+      const diff = newStock - oldStock;
+      const sign = diff > 0 ? '+' : '';
+      const displayEl = document.getElementById('adjustDifferenceDisplay');
+
+      displayEl.value = `${sign}${diff} ${item.unit || 'kg'}`;
+      if (diff > 0) {
+        displayEl.style.color = 'var(--color-success)';
+      } else if (diff < 0) {
+        displayEl.style.color = 'var(--color-danger)';
+      } else {
+        displayEl.style.color = 'var(--text-main)';
+      }
+    }
+
+    function handleAdjustSubmit(e) {
+      e.preventDefault();
+      const itemId = document.getElementById('adjustItemId')?.value;
+      const newStock = Number(document.getElementById('adjustNewStock')?.value) || 0;
+      const reason = document.getElementById('adjustReason')?.value.trim();
+
+      const res = store.adjustStock(itemId, newStock, reason);
+      if (res.success) {
+        closeAdjustModal();
+        renderInventoryPage();
+      } else {
+        alert(res.message || 'Could not adjust stock');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // UTF-8 BOM CSV EXPORTS
+    // -------------------------------------------------------------
+    function downloadCsv(filename, csvContent) {
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportStockMasterCsv() {
+      const items = store.data.items || [];
+      const headers = ['Commodity Code', 'Commodity Name', 'Category', 'Unit', 'Current Stock', 'Cost Rate (Rs)', 'Selling Rate (Rs)', 'Margin (Rs)', 'Stock Valuation (Rs)'];
+      const rows = items.map(i => {
+        const stock = Number(i.currentStock) || 0;
+        const cost = Number(i.costPrice) || 0;
+        const rate = Number(i.defaultRate) || 0;
+        const margin = rate - cost;
+        const valuation = stock * cost;
+        return [
+          `"${i.code || ''}"`,
+          `"${i.name || ''}"`,
+          `"${i.category || ''}"`,
+          `"${i.unit || 'kg'}"`,
+          stock,
+          cost.toFixed(2),
+          rate.toFixed(2),
+          margin.toFixed(2),
+          valuation.toFixed(2)
+        ].join(',');
+      });
+
+      const csv = [headers.join(','), ...rows].join('\r\n');
+      downloadCsv(`Mandi_Stock_Master_${store.currentDate}.csv`, csv);
+    }
+
+    function exportInwardsCsv() {
+      const inwards = store.data.inventoryInward || [];
+      const headers = ['Lot Ref', 'Date', 'Time', 'Location ID', 'Commodity', 'Quantity', 'Unit', 'Purchase Cost (Rs)', 'Total Lot Cost (Rs)', 'Supplier', 'Notes'];
+      const rows = inwards.map(r => [
+        `"${r.id}"`,
+        `"${r.date}"`,
+        `"${r.time || ''}"`,
+        `"${r.locationId || ''}"`,
+        `"${r.itemName}"`,
+        r.quantity,
+        `"${r.unit}"`,
+        Number(r.costPrice).toFixed(2),
+        Number(r.totalCost).toFixed(2),
+        `"${(r.supplier || '').replace(/"/g, '""')}"`,
+        `"${(r.notes || '').replace(/"/g, '""')}"`
+      ].join(','));
+
+      const csv = [headers.join(','), ...rows].join('\r\n');
+      downloadCsv(`Mandi_Inward_Arrivals_${store.currentDate}.csv`, csv);
+    }
+
+    function exportWastageCsv() {
+      const records = store.data.inventoryWastage || [];
+      const headers = ['Write-off Ref', 'Date', 'Time', 'Location ID', 'Commodity', 'Spoiled Qty', 'Unit', 'Cost Rate (Rs)', 'Financial Loss (Rs)', 'Reason', 'Notes'];
+      const rows = records.map(r => [
+        `"${r.id}"`,
+        `"${r.date}"`,
+        `"${r.time || ''}"`,
+        `"${r.locationId || ''}"`,
+        `"${r.itemName}"`,
+        r.quantity,
+        `"${r.unit}"`,
+        Number(r.costPrice).toFixed(2),
+        Number(r.estimatedLoss).toFixed(2),
+        `"${(r.reason || '').replace(/"/g, '""')}"`,
+        `"${(r.notes || '').replace(/"/g, '""')}"`
+      ].join(','));
+
+      const csv = [headers.join(','), ...rows].join('\r\n');
+      downloadCsv(`Mandi_Wastage_Register_${store.currentDate}.csv`, csv);
+    }
+  </script>
+</body>
+</html>

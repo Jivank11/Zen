@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Customers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="sharedHeader" class="app-header">
+    <div class="header-left">
+      <a href="index.html" class="brand-link">
+        <span class="brand-text">Mandi</span>
+      </a>
+      <div class="header-context">
+        <div class="context-group">
+          <label class="context-label" data-i18n="label_location">Location</label>
+          <select id="sharedLocSelect" class="header-select">
+            <option value="loc-1">Main Mandi Yard</option>
+            <option value="loc-2">Wholesale Shed B</option>
+            <option value="loc-3">Fruit Auction Platform</option>
+          </select>
+        </div>
+        <div class="context-group">
+          <label class="context-label" data-i18n="label_date">Date</label>
+          <input type="date" id="sharedDateSelect" class="header-date">
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Navigation Links -->
+    <nav class="desktop-nav">
+      <a href="index.html" class="nav-item" data-i18n="nav_billing">Billing</a>
+      <a href="dashboard.html" class="nav-item" data-i18n="nav_dashboard">Dashboard</a>
+      <a href="customers.html" class="nav-item active" data-i18n="nav_customers">Customers</a>
+      <a href="daybook.html" class="nav-item" data-i18n="nav_daybook">Daybook</a>
+      <a href="items.html" class="nav-item" data-i18n="nav_rates">Rates</a>
+      <a href="settings.html" class="nav-item" data-i18n="nav_settings">Settings</a>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="header-right">
+      <div class="create-dropdown-wrap">
+        <button id="createMenuBtn" class="btn-create" data-i18n="btn_create">+ Create</button>
+      </div>
+      <button id="sharedLangToggle" class="btn-icon" title="Toggle Language">हिन्दी</button>
+      <button id="sharedThemeToggle" class="btn-icon" title="Toggle Theme">
+        <span class="theme-sun">Light</span>
+        <span class="theme-moon">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page-container">
+    
+    <!-- Top Summary Ribbon -->
+    <div class="summary-strip" id="customersSummaryStrip">
+      <div class="strip-card">
+        <span class="strip-label" data-i18n="total_due">Total Outstanding Debt</span>
+        <div class="strip-val text-danger" id="summaryTotalDebt">₹0.00</div>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Total Advance (Jama)</span>
+        <div class="strip-val text-success" id="summaryTotalAdvance">₹0.00</div>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label" id="summaryPeriodLabel1">Today's Taken</span>
+        <div class="strip-val text-warning" id="summaryPeriodVal1">₹0.00</div>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label" id="summaryPeriodLabel2">Today's Repaid</span>
+        <div class="strip-val text-success" id="summaryPeriodVal2">₹0.00</div>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Active Parties</span>
+        <div class="strip-val" id="summaryPartiesCount">0</div>
+      </div>
+    </div>
+
+    <div class="page-header">
+      <h2 class="page-title" data-i18n="nav_customers">Customers & Khata Ledger</h2>
+      <div class="page-toolbar">
+        <input type="text" id="custSearchInput" class="search-input" placeholder="Search customer name or phone...">
+        <select id="custStatusFilter" class="header-select">
+          <option value="ALL">All Parties</option>
+          <option value="DEBTORS">Pending Debtors Only (Balance &gt; ₹0)</option>
+          <option value="ADVANCE">Advance Balance Only (Jama &gt; ₹0)</option>
+          <option value="CLEAR">Settled Only (Zero Due)</option>
+        </select>
+        <select id="custPeriodFilter" class="header-select">
+          <option value="1D">Today (1 Day)</option>
+          <option value="1W">Last 7 Days (1 Week)</option>
+          <option value="1M" selected>Last 30 Days (1 Month)</option>
+          <option value="6M">Last 6 Months</option>
+          <option value="ALL">All Time</option>
+        </select>
+        <button type="button" class="btn-primary" onclick="openGlobalCustomerModal()">+ Add Customer</button>
+      </div>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="table-card">
+      <table class="data-table">
+        <thead id="customersTableHead">
+          <!-- Dynamically updated based on period -->
+        </thead>
+        <tbody id="customersTableBody">
+          <!-- Rendered via JS -->
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav id="sharedMobileNav" class="mobile-bottom-nav"></nav>
+
+  <!-- Detailed Customer Statement Modal -->
+  <div id="statementModal" class="modal-backdrop hidden">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="statementCustName">Customer Ledger</h3>
+          <span class="context-label" id="statementCustPhone">Phone: --</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <select id="statementPeriodSelect" class="header-select">
+            <option value="1D">Today (1D)</option>
+            <option value="1W">7 Days</option>
+            <option value="1M">30 Days</option>
+            <option value="6M">6 Months</option>
+            <option value="ALL">All Time</option>
+          </select>
+          <button class="modal-close" onclick="closeModal('statementModal')">&times;</button>
+        </div>
+      </div>
+      <div style="padding:1.25rem;">
+        
+        <!-- Balance Breakdown Box -->
+        <div class="modal-dues-box" style="margin-bottom:1rem;">
+          <div><span class="context-label" id="statLbl1">Opening Due:</span> <strong id="statPast" class="text-danger font-mono font-bold">₹0.00</strong></div>
+          <div><span class="context-label" id="statLbl2">Period Taken:</span> <strong id="statToday" class="text-warning font-mono font-bold">₹0.00</strong></div>
+          <div><span class="context-label" id="statLbl3">Period Repaid:</span> <strong id="statRepaid" class="text-success font-mono font-bold">₹0.00</strong></div>
+          <div><span class="context-label">Net Balance:</span> <strong id="statNet" class="font-mono font-bold" style="font-size:1.05rem;">₹0.00</strong></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <h4 style="font-size:0.88rem; font-weight:700;">Transaction History</h4>
+          <button id="statementSettleBtn" class="btn-primary" style="padding:0.3rem 0.75rem; font-size:0.75rem;">Receive Payment</button>
+        </div>
+
+        <div class="table-card" style="max-height:320px; overflow-y:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Type</th>
+                <th>Details / Items</th>
+                <th style="text-align:right;">Debit (Taken)</th>
+                <th style="text-align:right;">Credit (Paid)</th>
+                <th style="text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="statementHistoryBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="btn-ghost" onclick="closeModal('statementModal')">Close</button>
+        <button type="button" class="btn-whatsapp" id="btnShareStatementWhatsApp" onclick="handleShareActiveStatementWhatsApp()" title="Share statement via WhatsApp">Share WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="store.js?v=2"></script>
+  <script>
+    let activeCustIdForStatement = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('customers');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      if (searchParam) {
+        const searchInput = document.getElementById('custSearchInput');
+        if (searchInput) {
+          searchInput.value = searchParam;
+        }
+      }
+
+      renderCustomersPage();
+
+      const idParam = urlParams.get('id');
+      if (idParam) {
+        viewCustomerStatement(idParam);
+      }
+
+      document.getElementById('custSearchInput')?.addEventListener('input', renderCustomersTable);
+      document.getElementById('custStatusFilter')?.addEventListener('change', renderCustomersTable);
+      document.getElementById('custPeriodFilter')?.addEventListener('change', renderCustomersTable);
+
+      document.getElementById('statementPeriodSelect')?.addEventListener('change', (e) => {
+        if (activeCustIdForStatement) {
+          viewCustomerStatement(activeCustIdForStatement, e.target.value);
+        }
+      });
+    });
+
+    function renderCustomersPage() {
+      renderCustomersTable();
+    }
+
+    function renderCustomersTable() {
+      const thead = document.getElementById('customersTableHead');
+      const tbody = document.getElementById('customersTableBody');
+      const search = (document.getElementById('custSearchInput')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('custStatusFilter')?.value || 'ALL';
+      const period = document.getElementById('custPeriodFilter')?.value || '1M';
+      const periodName = period === '1D' ? '1D' : (period === '1W' ? '7D' : (period === '1M' ? '30D' : (period === '6M' ? '6M' : 'All')));
+
+      // Dynamic header based on period
+      if (period === '1D') {
+        thead.innerHTML = `
+          <tr>
+            <th>Customer / Party</th>
+            <th>Location</th>
+            <th>Phone</th>
+            <th style="text-align:right;">Past Overdue</th>
+            <th style="text-align:right;">Today's Taken</th>
+            <th style="text-align:right;">Today's Repaid</th>
+            <th style="text-align:right;">Today's Overdue</th>
+            <th style="text-align:right;">Total Balance</th>
+            <th style="text-align:center;">Actions</th>
+          </tr>
+        `;
+      } else {
+        thead.innerHTML = `
+          <tr>
+            <th>Customer / Party</th>
+            <th>Location</th>
+            <th>Phone</th>
+            <th style="text-align:right;">Opening Due</th>
+            <th style="text-align:right;">Taken (${periodName})</th>
+            <th style="text-align:right;">Repaid (${periodName})</th>
+            <th style="text-align:right;">Net Change</th>
+            <th style="text-align:right;">Current Balance</th>
+            <th style="text-align:center;">Actions</th>
+          </tr>
+        `;
+      }
+
+      let customers = store.data.customers || [];
+
+      if (search) {
+        customers = customers.filter(c =>
+          c.name.toLowerCase().includes(search) ||
+          (c.phone && c.phone.includes(search))
+        );
+      }
+
+      if (statusFilter === 'DEBTORS') {
+        customers = customers.filter(c => {
+          const bal = store.getCustomerBalanceBreakdown(c.id, store.currentDate);
+          return bal.totalOverdue > 0;
+        });
+      } else if (statusFilter === 'ADVANCE') {
+        customers = customers.filter(c => {
+          const bal = store.getCustomerBalanceBreakdown(c.id, store.currentDate);
+          return bal.advanceCredit > 0;
+        });
+      } else if (statusFilter === 'CLEAR') {
+        customers = customers.filter(c => {
+          const bal = store.getCustomerBalanceBreakdown(c.id, store.currentDate);
+          return bal.totalOverdue <= 0 && (!bal.advanceCredit || bal.advanceCredit <= 0);
+        });
+      }
+
+      // Dynamically compute summary metrics across the filtered list
+      let grandTotalDebt = 0;
+      let grandTotalAdvance = 0;
+      let totalTaken = 0;
+      let totalRepaid = 0;
+      let debtorsCount = 0;
+
+      customers.forEach(c => {
+        if (period === '1D') {
+          const bal = store.getCustomerBalanceBreakdown(c.id, store.currentDate);
+          grandTotalDebt += bal.totalOverdue;
+          grandTotalAdvance += bal.advanceCredit;
+          totalTaken += bal.todaysCredit;
+          totalRepaid += bal.todaysRepaid;
+          if (bal.totalOverdue > 0) debtorsCount++;
+        } else {
+          const p = store.getCustomerPeriodBreakdown(c.id, period, store.currentDate);
+          if (p.currentBalance > 0) grandTotalDebt += p.currentBalance;
+          else if (p.currentBalance < 0) grandTotalAdvance += Math.abs(p.currentBalance);
+          totalTaken += p.periodCredit;
+          totalRepaid += p.periodRepaid;
+          if (p.currentBalance > 0) debtorsCount++;
+        }
+      });
+
+      document.getElementById('summaryTotalDebt').textContent = formatCurrency(grandTotalDebt);
+      const advEl = document.getElementById('summaryTotalAdvance');
+      if (advEl) advEl.textContent = formatCurrency(grandTotalAdvance);
+
+      const lbl1 = document.getElementById('summaryPeriodLabel1');
+      const val1 = document.getElementById('summaryPeriodVal1');
+      const lbl2 = document.getElementById('summaryPeriodLabel2');
+      const val2 = document.getElementById('summaryPeriodVal2');
+      if (lbl1 && val1) {
+        lbl1.textContent = period === '1D' ? "Today's Taken" : `Period Taken (${periodName})`;
+        val1.textContent = formatCurrency(totalTaken);
+      }
+      if (lbl2 && val2) {
+        lbl2.textContent = period === '1D' ? "Today's Repaid" : `Period Repaid (${periodName})`;
+        val2.textContent = formatCurrency(totalRepaid);
+      }
+      const countEl = document.getElementById('summaryPartiesCount');
+      if (countEl) {
+        countEl.textContent = `${debtorsCount} Debtors / ${customers.length} Parties`;
+      }
+
+      if (customers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-dim);">No customers found</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = customers.map(cust => {
+        const loc = store.data.locations.find(l => l.id === cust.locationId);
+        const locTag = loc ? `<span class="badge" style="font-size:0.68rem; background:rgba(255,255,255,0.06); color:var(--text-dim);">${loc.code || loc.name}</span>` : '<span class="text-dim">--</span>';
+
+        if (period === '1D') {
+          const bal = store.getCustomerBalanceBreakdown(cust.id, store.currentDate);
+          return `
+            <tr class="clickable" onclick="viewCustomerStatement('${cust.id}')">
+              <td><strong>${cust.name}</strong></td>
+              <td>${locTag}</td>
+              <td class="font-mono text-muted" style="font-size:0.75rem;">${cust.phone || '--'}</td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:600;" class="${bal.pastOverdue > 0 ? 'text-danger' : 'text-dim'}">
+                ${formatCurrency(bal.pastOverdue)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); color:var(--color-warning);">
+                ${formatCurrency(bal.todaysCredit)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); color:var(--color-success);">
+                ${formatCurrency(bal.todaysRepaid)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:600;" class="${bal.todaysOverdue > 0 ? 'text-warning' : 'text-dim'}">
+                ${formatCurrency(bal.todaysOverdue)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:800; font-size:0.95rem;" class="${bal.totalOverdue > 0 ? 'text-danger' : (bal.advanceCredit > 0 ? 'text-success' : 'text-dim')}">
+                ${bal.advanceCredit > 0 ? `${formatCurrency(-bal.advanceCredit)} <span class="badge" style="font-size:0.65rem; background:rgba(16,185,129,0.15); color:var(--color-success); vertical-align:middle;">Jama</span>` : formatCurrency(bal.totalOverdue)}
+              </td>
+              <td style="text-align:center;" onclick="event.stopPropagation()">
+                <button class="btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="openGlobalRepaymentModal('${cust.id}')">Settle</button>
+              </td>
+            </tr>
+          `;
+        } else {
+          const p = store.getCustomerPeriodBreakdown(cust.id, period, store.currentDate);
+          const netClass = p.netChange > 0 ? 'text-danger' : (p.netChange < 0 ? 'text-success' : 'text-dim');
+          const netSign = p.netChange > 0 ? '+' : '';
+          return `
+            <tr class="clickable" onclick="viewCustomerStatement('${cust.id}')">
+              <td><strong>${cust.name}</strong></td>
+              <td>${locTag}</td>
+              <td class="font-mono text-muted" style="font-size:0.75rem;">${cust.phone || '--'}</td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:600;" class="${p.openingDue > 0 ? 'text-danger' : (p.openingDue < 0 ? 'text-success' : 'text-dim')}">
+                ${formatCurrency(p.openingDue)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); color:var(--color-warning);">
+                ${formatCurrency(p.periodCredit)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); color:var(--color-success);">
+                ${formatCurrency(p.periodRepaid)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:600;" class="${netClass}">
+                ${netSign}${formatCurrency(p.netChange)}
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:800; font-size:0.95rem;" class="${p.currentBalance > 0 ? 'text-danger' : (p.currentBalance < 0 ? 'text-success' : 'text-dim')}">
+                ${p.currentBalance < 0 ? `${formatCurrency(p.currentBalance)} <span class="badge" style="font-size:0.65rem; background:rgba(16,185,129,0.15); color:var(--color-success); vertical-align:middle;">Jama</span>` : formatCurrency(p.currentBalance)}
+              </td>
+              <td style="text-align:center;" onclick="event.stopPropagation()">
+                <button class="btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="openGlobalRepaymentModal('${cust.id}')">Settle</button>
+              </td>
+            </tr>
+          `;
+        }
+      }).join('');
+    }
+
+    function viewCustomerStatement(custId, selectedPeriod = null) {
+      activeCustIdForStatement = custId;
+      const cust = store.data.customers.find(c => c.id === custId);
+      if (!cust) return;
+
+      const period = selectedPeriod || document.getElementById('custPeriodFilter')?.value || '1M';
+      const periodSelect = document.getElementById('statementPeriodSelect');
+      if (periodSelect && !selectedPeriod) {
+        periodSelect.value = period;
+      }
+
+      const p = store.getCustomerPeriodBreakdown(custId, period, store.currentDate);
+      const loc = store.data.locations.find(l => l.id === cust.locationId);
+      const locTag = loc ? ` [${loc.code || loc.name}]` : '';
+
+      document.getElementById('statementCustName').textContent = `${cust.name}${locTag}`;
+      document.getElementById('statementCustPhone').textContent = `Phone: ${cust.phone || 'No phone'} | Period: ${p.startDate} to ${p.endDate}`;
+      
+      document.getElementById('statLbl1').textContent = period === '1D' ? 'Past Overdue:' : 'Opening Due:';
+      document.getElementById('statLbl2').textContent = period === '1D' ? "Today's Taken:" : 'Period Taken:';
+      document.getElementById('statLbl3').textContent = period === '1D' ? "Today's Repaid:" : 'Period Repaid:';
+
+      document.getElementById('statPast').textContent = formatCurrency(p.openingDue);
+      document.getElementById('statToday').textContent = formatCurrency(p.periodCredit);
+      document.getElementById('statRepaid').textContent = formatCurrency(p.periodRepaid);
+      if (p.currentBalance < 0) {
+        document.getElementById('statNet').textContent = `${formatCurrency(p.currentBalance)} (Advance)`;
+        document.getElementById('statNet').className = 'stat-val text-success';
+      } else {
+        document.getElementById('statNet').textContent = formatCurrency(p.currentBalance);
+        document.getElementById('statNet').className = `stat-val ${p.currentBalance > 0 ? 'text-danger' : 'text-dim'}`;
+      }
+
+      document.getElementById('statementSettleBtn').onclick = () => {
+        closeModal('statementModal');
+        openGlobalRepaymentModal(cust.id);
+      };
+
+      // Compile chronological transaction ledger in window [startDate, store.currentDate]
+      const custSales = store.data.sales.filter(s => s.customerId === custId && s.date >= p.startDate && s.date <= store.currentDate);
+      const custPayments = store.data.payments.filter(pPay => pPay.customerId === custId && pPay.date >= p.startDate && pPay.date <= store.currentDate);
+
+      let history = [];
+      custSales.forEach(s => {
+        history.push({
+          id: s.id,
+          date: s.date,
+          time: s.time,
+          type: s.saleType === 'CREDIT' ? 'Credit Sale' : 'Cash Sale',
+          details: (s.items || []).map(i => `${i.itemName} (${i.weight}${i.unit})`).join(', '),
+          debit: s.finalAmount,
+          credit: 0
+        });
+      });
+
+      custPayments.forEach(pPay => {
+        history.push({
+          id: pPay.id,
+          date: pPay.date,
+          time: pPay.time,
+          type: 'Repayment Received',
+          details: `Mode: ${pPay.paymentMode} ${pPay.notes ? '— ' + pPay.notes : ''}`,
+          debit: 0,
+          credit: pPay.amount
+        });
+      });
+
+      // Sort newest first
+      history.sort((a, b) => b.date.localeCompare(a.date));
+
+      const tbody = document.getElementById('statementHistoryBody');
+      if (history.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-dim);">No transactions in this period (${p.startDate} to ${p.endDate})</td></tr>`;
+      } else {
+        tbody.innerHTML = history.map(h => `
+          <tr>
+            <td>
+              <div class="font-bold">${h.date}</div>
+              <small class="text-dim">${h.time}</small>
+            </td>
+            <td><span class="badge" style="font-size:0.7rem;">${h.type}</span></td>
+            <td style="font-size:0.75rem; color:var(--text-muted);">${h.details}</td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:600; color:var(--color-warning);">
+              ${h.debit > 0 ? formatCurrency(h.debit) : '--'}
+            </td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:600; color:var(--color-success);">
+              ${h.credit > 0 ? formatCurrency(h.credit) : '--'}
+            </td>
+            <td style="text-align:center;">
+              <button type="button" class="btn-ghost" style="padding:1px 6px; font-size:0.72rem;" onclick="showReceiptSlip('${h.id}')" title="View Thermal Receipt Slip">Slip</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      document.getElementById('statementModal')?.classList.remove('hidden');
+    }
+
+    function handleShareActiveStatementWhatsApp() {
+      if (!activeCustIdForStatement) return;
+      const period = document.getElementById('statementPeriodSelect')?.value || '1M';
+      shareCustomerStatementViaWhatsApp(activeCustIdForStatement, period);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Daybook (Roznamcha)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Shared Header (Rendered dynamically by store.js) -->
+  <header id="sharedHeader" class="app-header"></header>
+
+  <main class="page-container">
+    
+    <!-- Top Daily Summary Strip -->
+    <div class="summary-strip">
+      <div class="strip-card">
+        <span class="strip-label" id="daybookLabelSales">Today's Total Sales</span>
+        <div class="strip-val" id="daybookTotalSales">₹0.00</div>
+        <small class="text-dim" id="daybookSalesCount">0 bills issued</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label" id="daybookLabelCash">Physical Cash Drawer (गल्ला)</span>
+        <div class="strip-val text-success" id="daybookCashInReg">₹0.00</div>
+        <small class="text-dim" id="daybookCashDrawerSub">Spot Cash + Cash Repaid</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label" id="daybookLabelDigital">Online / UPI Inflow (बैंक)</span>
+        <div class="strip-val text-success" id="daybookDigitalInflow">₹0.00</div>
+        <small class="text-dim" id="daybookDigitalInflowSub">UPI, GPay & Bank transfers</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label" id="daybookLabelCredit">Credit Issued Today (उधार)</span>
+        <div class="strip-val text-warning" id="daybookCreditIssued">₹0.00</div>
+        <small class="text-dim" id="daybookCreditCount">Uncollected Khata bills</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label" id="daybookLabelTotal">Total Inflow Collected</span>
+        <div class="strip-val text-success" id="daybookTotalInflow">₹0.00</div>
+        <small class="text-dim" id="daybookTotalInflowSub">Physical Cash + Online</small>
+      </div>
+    </div>
+
+    <!-- Archive Audit Mode Banner -->
+    <div id="archiveAuditBanner" class="archive-banner hidden"></div>
+
+    <div class="page-header">
+      <div>
+        <h2 class="page-title" data-i18n="nav_daybook">Roznamcha (Daily Audit Book)</h2>
+        <span class="text-dim" style="font-size:0.75rem;" id="daybookScopeSub">Audit scope</span>
+      </div>
+      <div class="page-toolbar">
+        <select id="daybookFySelect" class="header-select" title="Filter by Financial Year">
+          <option value="CURRENT">Current FY (Active)</option>
+        </select>
+        <select id="daybookLocSelect" class="header-select" title="Filter by Market Stall">
+          <option value="ALL">All Stalls / Counters (Combined)</option>
+        </select>
+        <input type="date" id="daybookDateInput" class="header-date" title="Select audit date">
+        <input type="text" id="daybookSearchInput" class="search-input" placeholder="Search bill #, buyer, produce...">
+        <select id="daybookTypeFilter" class="header-select" title="Filter transaction type">
+          <option value="ALL">All Transactions</option>
+          <option value="DIRECT">Direct Cash Sales</option>
+          <option value="CREDIT">Daily Credit (Khata)</option>
+          <option value="PAYMENT_CASH">Repayments (Cash)</option>
+          <option value="PAYMENT_ONLINE">Repayments (UPI/Bank)</option>
+        </select>
+        <button type="button" class="btn-primary" id="exportDaybookCsvBtn" data-i18n="btn_export_csv">Export CSV</button>
+        <button type="button" class="btn-ghost" onclick="window.print()" title="Print physical audit sheet">Print Report</button>
+      </div>
+    </div>
+
+    <!-- Daybook Transactions Table -->
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th data-i18n="th_bill_no">Ref / Bill #</th>
+            <th data-i18n="th_time">Time</th>
+            <th>Location</th>
+            <th>Type</th>
+            <th data-i18n="th_buyer">Buyer / Party</th>
+            <th data-i18n="th_items">Produce Items & Rate / Details</th>
+            <th style="text-align:right;" data-i18n="th_amount">Final Amount</th>
+            <th data-i18n="th_status">Status / Mode</th>
+            <th style="text-align:center;" data-i18n="th_actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="daybookTableBody">
+          <!-- Rendered via JS -->
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- Mobile Bottom Nav (Rendered dynamically by store.js) -->
+  <nav id="sharedMobileNav" class="mobile-bottom-nav"></nav>
+
+  <script src="store.js?v=2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('daybook');
+      initDaybookToolbar();
+      renderDaybookPage();
+
+      document.getElementById('daybookFySelect')?.addEventListener('change', handleFyChange);
+      document.getElementById('daybookSearchInput')?.addEventListener('input', renderDaybookTable);
+      document.getElementById('daybookTypeFilter')?.addEventListener('change', renderDaybookTable);
+      document.getElementById('daybookLocSelect')?.addEventListener('change', renderDaybookPage);
+      document.getElementById('daybookDateInput')?.addEventListener('change', renderDaybookPage);
+      document.getElementById('exportDaybookCsvBtn')?.addEventListener('click', exportToCsv);
+
+      // Real-time synchronization across tabs and modals
+      window.addEventListener('mandi:sale-saved', renderDaybookPage);
+      window.addEventListener('mandi:payment-saved', renderDaybookPage);
+      window.addEventListener('mandi:customer-saved', renderDaybookPage);
+      window.addEventListener('mandi:storage-sync', renderDaybookPage);
+      window.addEventListener('mandi:annual-rollover-completed', () => {
+        initDaybookToolbar();
+        renderDaybookPage();
+      });
+    });
+
+    function initDaybookToolbar() {
+      // 1. Populate Financial Year Selector
+      const fySelect = document.getElementById('daybookFySelect');
+      if (fySelect) {
+        const cloudCfg = getCloudConfig();
+        const activeYear = (cloudCfg?.activeYear || '2026_27').replace('_', '-');
+        const archivedList = store.getArchivedYears();
+
+        let optionsHtml = `<option value="CURRENT">Current FY (${activeYear})</option>`;
+        archivedList.forEach(y => {
+          optionsHtml += `<option value="${y.yearId}">${y.yearLabel || ('FY ' + y.yearId.replace('_', '-'))} (Archived)</option>`;
+        });
+        fySelect.innerHTML = optionsHtml;
+
+        // Check URL query param for ?fy=...
+        const urlParams = new URLSearchParams(window.location.search);
+        const fyParam = urlParams.get('fy');
+        if (fyParam && (fyParam === 'CURRENT' || store.getArchivedYear(fyParam))) {
+          fySelect.value = fyParam;
+        }
+      }
+
+      // 2. Populate Location / Stall Selector
+      const locSelect = document.getElementById('daybookLocSelect');
+      if (locSelect && store?.data?.locations) {
+        locSelect.innerHTML = `
+          <option value="ALL">All Stalls / Counters (Combined)</option>
+          ${store.data.locations.map(l => `
+            <option value="${l.id}">${l.name} [${l.code || 'LOC'}]</option>
+          `).join('')}
+        `;
+        locSelect.value = store.currentLocationId || 'ALL';
+      }
+
+      // 3. Initialize Date Input
+      const dateInput = document.getElementById('daybookDateInput');
+      if (dateInput) {
+        const isArchived = fySelect && fySelect.value !== 'CURRENT';
+        // For archived years, default to empty date so full fiscal year transactions are displayed
+        dateInput.value = isArchived ? '' : store.currentDate;
+      }
+    }
+
+    function handleFyChange() {
+      const fySelect = document.getElementById('daybookFySelect');
+      const dateInput = document.getElementById('daybookDateInput');
+      const fyVal = fySelect ? fySelect.value : 'CURRENT';
+
+      if (fyVal === 'CURRENT') {
+        if (dateInput) dateInput.value = store.currentDate;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('fy');
+        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+      } else {
+        // Clear date so the full archive is immediately visible
+        if (dateInput) dateInput.value = '';
+        const url = new URL(window.location.href);
+        url.searchParams.set('fy', fyVal);
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+      renderDaybookPage();
+    }
+
+    function switchDaybookToCurrentYear() {
+      const fySelect = document.getElementById('daybookFySelect');
+      if (fySelect) {
+        fySelect.value = 'CURRENT';
+        handleFyChange();
+      }
+    }
+    window.switchDaybookToCurrentYear = switchDaybookToCurrentYear;
+
+    function getFilteredRecords() {
+      const fyMode = document.getElementById('daybookFySelect')?.value || 'CURRENT';
+      const locId = document.getElementById('daybookLocSelect')?.value || store.currentLocationId || 'ALL';
+      const auditDate = document.getElementById('daybookDateInput')?.value || '';
+
+      const matchLoc = (itemLocId) => locId === 'ALL' || !itemLocId || itemLocId === locId;
+      const matchDate = (itemDate) => !auditDate || itemDate === auditDate;
+
+      let sales = [];
+      let payments = [];
+      let archive = null;
+
+      if (fyMode === 'CURRENT') {
+        sales = (store.data.sales || []).filter(s => matchLoc(s.locationId) && matchDate(s.date));
+        payments = (store.data.payments || []).filter(p => matchLoc(p.locationId) && matchDate(p.date));
+      } else {
+        archive = store.getArchivedYear(fyMode);
+        if (archive) {
+          sales = (archive.sales || []).filter(s => matchLoc(s.locationId) && matchDate(s.date));
+          payments = (archive.payments || []).filter(p => matchLoc(p.locationId) && matchDate(p.date));
+        }
+      }
+
+      return { locId, auditDate, fyMode, sales, payments, archive };
+    }
+
+    function renderDaybookPage() {
+      const { locId, auditDate, fyMode, sales, payments, archive } = getFilteredRecords();
+      const isArchive = fyMode !== 'CURRENT';
+
+      // 1. Render Archive Audit Mode Banner
+      const banner = document.getElementById('archiveAuditBanner');
+      if (banner) {
+        if (isArchive && archive) {
+          banner.className = 'archive-banner';
+          banner.innerHTML = `
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+              <span class="badge badge-warning" style="font-size:0.75rem;">ARCHIVE AUDIT MODE</span>
+              <span>Viewing Historical Ledger for <strong>${archive.yearLabel || archive.yearId}</strong> (Closed: ${archive.closedDate || '--'})</span>
+              <span class="text-dim" style="font-size:0.75rem;">Turnover: ${formatCurrency(archive.salesTurnover || 0)} | Collections: ${formatCurrency(archive.paymentsCollected || 0)} | Carried Dues: ${formatCurrency(archive.carriedDues || 0)}</span>
+            </div>
+            <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+              ${archive.spreadsheetUrl ? `<a href="${archive.spreadsheetUrl}" target="_blank" rel="noopener" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem; color:var(--brand-accent);" title="Open Google Sheet in Drive">Google Sheet</a>` : ''}
+              <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem;" onclick="exportArchivedYearCsv('${archive.yearId}')" title="Download historical CSV">Download FY CSV</button>
+              <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem; font-weight:700;" onclick="switchDaybookToCurrentYear()">Return to Active FY</button>
+            </div>
+          `;
+        } else {
+          banner.className = 'archive-banner hidden';
+          banner.innerHTML = '';
+        }
+      }
+
+      // 2. Update Dynamic Strip Labels
+      const labelSales = document.getElementById('daybookLabelSales');
+      const labelCash = document.getElementById('daybookLabelCash');
+      const labelDigital = document.getElementById('daybookLabelDigital');
+      const labelCredit = document.getElementById('daybookLabelCredit');
+      const labelTotal = document.getElementById('daybookLabelTotal');
+
+      if (labelSales) labelSales.textContent = isArchive ? 'Archived Sales Turnover' : "Today's Total Sales";
+      if (labelCash) labelCash.textContent = isArchive ? 'Archived Cash Collected' : 'Physical Cash Drawer (गल्ला)';
+      if (labelDigital) labelDigital.textContent = isArchive ? 'Archived Online / Bank' : 'Online / UPI Inflow (बैंक)';
+      if (labelCredit) labelCredit.textContent = isArchive ? 'Archived Credit Issued' : 'Credit Issued Today (उधार)';
+      if (labelTotal) labelTotal.textContent = isArchive ? 'Total Archived Collections' : 'Total Inflow Collected';
+
+      // 3. Update Subtitle
+      const locName = locId === 'ALL' ? 'All Stalls (Combined)' : (store.data.locations.find(l => l.id === locId)?.name || 'Selected Stall');
+      const scopeSub = document.getElementById('daybookScopeSub');
+      if (scopeSub) {
+        const datePart = auditDate ? `Date: ${auditDate}` : (isArchive ? 'Full Year Archive' : 'All Dates');
+        const fyPart = isArchive ? ` | FY: ${archive?.yearLabel || fyMode} (Read-Only Archive)` : '';
+        scopeSub.textContent = `${datePart} | Scope: ${locName}${fyPart} | ${sales.length} bills, ${payments.length} payments`;
+      }
+
+      // 4. Financial Calculations
+      const totalSales = sales.reduce((sum, s) => sum + (s.finalAmount || 0), 0);
+      const directCash = sales.filter(s => s.saleType === 'DIRECT').reduce((sum, s) => sum + (s.finalAmount || 0), 0);
+      const creditIssued = sales.filter(s => s.saleType === 'CREDIT').reduce((sum, s) => sum + (s.finalAmount || 0), 0);
+
+      const cashRepayments = payments.filter(p => !p.paymentMode || p.paymentMode === 'CASH').reduce((sum, p) => sum + (p.amount || 0), 0);
+      const onlineRepayments = payments.filter(p => p.paymentMode && p.paymentMode !== 'CASH').reduce((sum, p) => sum + (p.amount || 0), 0);
+      const totalRepayments = cashRepayments + onlineRepayments;
+
+      const physicalCashInDrawer = directCash + cashRepayments;
+      const totalInflowCollected = directCash + totalRepayments;
+
+      document.getElementById('daybookTotalSales').textContent = formatCurrency(totalSales);
+      document.getElementById('daybookSalesCount').textContent = `${sales.length} bills recorded`;
+
+      document.getElementById('daybookCashInReg').textContent = formatCurrency(physicalCashInDrawer);
+      document.getElementById('daybookCashDrawerSub').textContent = `Spot: ${formatCurrency(directCash)} + Cash Repaid: ${formatCurrency(cashRepayments)}`;
+
+      document.getElementById('daybookDigitalInflow').textContent = formatCurrency(onlineRepayments);
+      document.getElementById('daybookDigitalInflowSub').textContent = `${payments.filter(p => p.paymentMode && p.paymentMode !== 'CASH').length} online payments`;
+
+      document.getElementById('daybookCreditIssued').textContent = formatCurrency(creditIssued);
+      document.getElementById('daybookCreditCount').textContent = `${sales.filter(s => s.saleType === 'CREDIT').length} credit bills`;
+
+      document.getElementById('daybookTotalInflow').textContent = formatCurrency(totalInflowCollected);
+      document.getElementById('daybookTotalInflowSub').textContent = `Physical Cash + Online Collections`;
+
+      renderDaybookTable();
+    }
+
+    function renderDaybookTable() {
+      const tbody = document.getElementById('daybookTableBody');
+      const search = (document.getElementById('daybookSearchInput')?.value || '').toLowerCase();
+      const typeFilter = document.getElementById('daybookTypeFilter')?.value || 'ALL';
+
+      const { auditDate, fyMode, sales, payments } = getFilteredRecords();
+      const isArchiveMode = fyMode !== 'CURRENT';
+
+      let transactions = [];
+
+      sales.forEach(s => {
+        const itemDetails = (s.items || []).map(i => `${i.itemName} (${i.weight}${i.unit} @ ₹${i.rate})`).join(', ');
+        transactions.push({
+          id: s.id,
+          billNo: s.billNo,
+          date: s.date,
+          time: s.time || '--',
+          rawTime: s.time || '',
+          locationId: s.locationId,
+          type: s.saleType,
+          customerId: s.customerId,
+          buyer: s.customerName,
+          items: itemDetails,
+          notes: s.notes || '',
+          amount: s.finalAmount || 0,
+          paymentMode: s.saleType === 'DIRECT' ? 'CASH' : 'KHATA',
+          status: s.saleType === 'DIRECT' ? 'Spot Settled' : 'Khata Due',
+          isSale: true
+        });
+      });
+
+      payments.forEach(p => {
+        transactions.push({
+          id: p.id,
+          billNo: p.receiptNo,
+          date: p.date,
+          time: p.time || '--',
+          rawTime: p.time || '',
+          locationId: p.locationId,
+          type: 'PAYMENT',
+          paymentMode: p.paymentMode || 'CASH',
+          customerId: p.customerId,
+          buyer: p.customerName,
+          items: `Payment received via ${p.paymentMode || 'CASH'}`,
+          notes: p.notes || '',
+          amount: p.amount || 0,
+          status: `Received (${p.paymentMode || 'CASH'})`,
+          isSale: false
+        });
+      });
+
+      // Filter by transaction type
+      if (typeFilter !== 'ALL') {
+        if (typeFilter === 'DIRECT') {
+          transactions = transactions.filter(t => t.isSale && t.type === 'DIRECT');
+        } else if (typeFilter === 'CREDIT') {
+          transactions = transactions.filter(t => t.isSale && t.type === 'CREDIT');
+        } else if (typeFilter === 'PAYMENT_CASH') {
+          transactions = transactions.filter(t => !t.isSale && (!t.paymentMode || t.paymentMode === 'CASH'));
+        } else if (typeFilter === 'PAYMENT_ONLINE') {
+          transactions = transactions.filter(t => !t.isSale && t.paymentMode && t.paymentMode !== 'CASH');
+        }
+      }
+
+      // Filter by search query
+      if (search) {
+        transactions = transactions.filter(t =>
+          (t.billNo && t.billNo.toLowerCase().includes(search)) ||
+          (t.buyer && t.buyer.toLowerCase().includes(search)) ||
+          (t.items && t.items.toLowerCase().includes(search)) ||
+          (t.notes && t.notes.toLowerCase().includes(search))
+        );
+      }
+
+      if (transactions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-dim);">No transactions recorded matching the selected criteria</td></tr>`;
+        return;
+      }
+
+      // Sort chronological descending (latest date and time at top)
+      transactions.sort((a, b) => {
+        const dateCmp = (b.date || '').localeCompare(a.date || '');
+        if (dateCmp !== 0) return dateCmp;
+        return (b.rawTime || '').localeCompare(a.rawTime || '') || b.id.localeCompare(a.id);
+      });
+
+      tbody.innerHTML = transactions.map(t => {
+        const loc = store.data.locations.find(l => l.id === t.locationId);
+        const locTag = loc ? `<span class="badge" style="font-size:0.68rem;">${loc.code || loc.name}</span>` : '<span class="text-dim">--</span>';
+
+        let typeBadge = '';
+        if (t.isSale) {
+          if (t.type === 'DIRECT') {
+            typeBadge = `<span class="badge" style="background:rgba(255,255,255,0.06);">Direct Cash</span>`;
+          } else {
+            typeBadge = `<span class="badge badge-warning">Daily Credit</span>`;
+          }
+        } else {
+          typeBadge = `<span class="badge badge-success">Repayment (${t.paymentMode})</span>`;
+        }
+
+        let buyerHtml = '';
+        if (t.customerId) {
+          buyerHtml = `
+            <a href="customers.html?search=${encodeURIComponent(t.buyer)}" class="font-bold text-main" style="text-decoration:none;" title="Click to view Customer Ledger">
+              ${t.buyer}
+            </a>
+          `;
+        } else {
+          buyerHtml = `<strong>${t.buyer}</strong> <span class="text-dim" style="font-size:0.7rem;">(Spot)</span>`;
+        }
+
+        let statusClass = 'text-success';
+        if (t.type === 'CREDIT') statusClass = 'text-warning';
+
+        const displayTime = (!auditDate && t.date)
+          ? `<div style="font-weight:600; font-size:0.75rem;">${t.date}</div><div class="text-dim" style="font-size:0.7rem;">${t.time}</div>`
+          : `<span class="font-mono text-muted" style="font-size:0.75rem;">${t.time}</span>`;
+
+        let actionBtns = `<button type="button" class="btn-ghost" style="padding:1px 6px; font-size:0.72rem;" onclick="showReceiptSlip('${t.id}')" title="Print Duplicate Slip">Slip</button>`;
+        if (!isArchiveMode) {
+          actionBtns += ` <button type="button" class="btn-ghost" style="padding:1px 5px; font-size:0.72rem; color:var(--color-danger); border:none;" onclick="deleteDaybookRecord('${t.id}', ${t.isSale})" title="Delete record">✕</button>`;
+        } else {
+          actionBtns += ` <span class="text-dim" style="font-size:0.68rem; margin-left:4px;" title="Sealed archive record">(Archived)</span>`;
+        }
+
+        return `
+          <tr>
+            <td><strong>${t.billNo}</strong></td>
+            <td>${displayTime}</td>
+            <td>${locTag}</td>
+            <td>${typeBadge}</td>
+            <td>${buyerHtml}</td>
+            <td style="max-width:300px; font-size:0.75rem; color:var(--text-muted);">
+              ${t.items}
+              ${t.notes ? `<div class="text-dim" style="font-size:0.68rem; margin-top:2px;">Note: ${t.notes}</div>` : ''}
+            </td>
+            <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${formatCurrency(t.amount)}</td>
+            <td>
+              <span class="${statusClass}" style="font-weight:600; font-size:0.75rem;">${t.status}</span>
+            </td>
+            <td style="text-align:center;">
+              ${actionBtns}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function deleteDaybookRecord(id, isSale) {
+      if (document.getElementById('daybookFySelect')?.value !== 'CURRENT') {
+        alert('Archived financial years are sealed and read-only. Deletion is not permitted.');
+        return;
+      }
+
+      promptOwnerPin('Delete Transaction Record', () => {
+        if (confirm('Move this transaction record to Recycle Bin? It can be restored anytime from Settings -> Backup & Maintenance -> Recycle Bin.')) {
+          const success = store.moveToRecycleBin(id, isSale, 'Deleted by Owner PIN');
+          if (success) {
+            renderDaybookPage();
+          } else {
+            alert('Failed to delete transaction record.');
+          }
+        }
+      });
+    }
+
+    function exportToCsv() {
+      const { locId, auditDate, fyMode, sales, payments, archive } = getFilteredRecords();
+      const isArchiveMode = fyMode !== 'CURRENT';
+
+      if (sales.length === 0 && payments.length === 0) {
+        alert('No sales or payment records found for the selected scope to export!');
+        return;
+      }
+
+      const locName = locId === 'ALL' ? 'ALL_STALLS' : (store.data.locations.find(l => l.id === locId)?.code || 'MANDI');
+      const dateTag = auditDate ? auditDate : (isArchiveMode ? (archive?.yearId || fyMode) : 'ALL_DATES');
+
+      let csv = "Ref / Bill No,Date,Time,Location,Transaction Type,Party Name,Payment Mode,Details / Items,Gross Subtotal,Round Off,Final Amount,Cash Inflow,Digital Inflow,Notes\n";
+
+      // Export sales
+      sales.forEach(s => {
+        const loc = store.data.locations.find(l => l.id === s.locationId);
+        const locCode = loc ? (loc.code || loc.name) : 'MAIN';
+        const items = (s.items || []).map(i => `${i.itemName} (${i.weight}${i.unit} @ ₹${i.rate})`).join('; ').replace(/"/g, '""');
+        const mode = s.saleType === 'DIRECT' ? 'CASH' : 'CREDIT';
+        const notes = (s.notes || '').replace(/"/g, '""');
+        const cashRec = s.saleType === 'DIRECT' ? (s.finalAmount || 0) : 0;
+        csv += `"${s.billNo}","${s.date}","${s.time || ''}","${locCode}","${s.saleType === 'DIRECT' ? 'DIRECT SALE' : 'DAILY CREDIT'}","${s.customerName}","${mode}","${items}",${s.grossSubtotal || 0},${s.roundOff || 0},${s.finalAmount || 0},${cashRec},0,"${notes}"\n`;
+      });
+
+      // Export repayments
+      payments.forEach(p => {
+        const loc = store.data.locations.find(l => l.id === p.locationId);
+        const locCode = loc ? (loc.code || loc.name) : 'MAIN';
+        const notes = (p.notes || '').replace(/"/g, '""');
+        const mode = p.paymentMode || 'CASH';
+        const isCash = mode === 'CASH';
+        const cashAmt = isCash ? (p.amount || 0) : 0;
+        const digitalAmt = !isCash ? (p.amount || 0) : 0;
+        csv += `"${p.receiptNo}","${p.date}","${p.time || ''}","${locCode}","REPAYMENT RECEIVED","${p.customerName}","${mode}","Repayment against outstanding debt",0,0,${p.amount || 0},${cashAmt},${digitalAmt},"${notes}"\n`;
+      });
+
+      // Accurate Financial Reconciliations
+      const totalSales = sales.reduce((sum, s) => sum + (s.finalAmount || 0), 0);
+      const directCash = sales.filter(s => s.saleType === 'DIRECT').reduce((sum, s) => sum + (s.finalAmount || 0), 0);
+      const creditIssued = sales.filter(s => s.saleType === 'CREDIT').reduce((sum, s) => sum + (s.finalAmount || 0), 0);
+
+      const cashRepayments = payments.filter(p => !p.paymentMode || p.paymentMode === 'CASH').reduce((sum, p) => sum + (p.amount || 0), 0);
+      const digitalRepayments = payments.filter(p => p.paymentMode && p.paymentMode !== 'CASH').reduce((sum, p) => sum + (p.amount || 0), 0);
+      const totalCashInDrawer = directCash + cashRepayments;
+      const grandTotalCollected = directCash + cashRepayments + digitalRepayments;
+
+      csv += `\n`;
+      csv += `"--- RECONCILIATION AUDIT ${isArchiveMode ? ('[ARCHIVE FY ' + (archive?.yearLabel || fyMode) + ']') : ''} ---","${auditDate || 'ALL_DATES'}","","${locName}","","","","","","","","","",""\n`;
+      csv += `"Total Billed Sales","","","","","","","",0,0,${totalSales},0,0,""\n`;
+      csv += `"Credit Issued (Uncollected)","","","","","","","",0,0,${creditIssued},0,0,""\n`;
+      csv += `"Spot Cash from Direct Sales","","","","","","","",0,0,${directCash},${directCash},0,""\n`;
+      csv += `"Cash Repayments Collected","","","","","","","",0,0,${cashRepayments},${cashRepayments},0,""\n`;
+      csv += `"TOTAL PHYSICAL CASH IN DRAWER","","","","","","","",0,0,${totalCashInDrawer},${totalCashInDrawer},0,"Ready for physical notes count"\n`;
+      csv += `"Digital Repayments (UPI/Bank/Cheque)","","","","","","","",0,0,${digitalRepayments},0,${digitalRepayments},"Bank ledger verification"\n`;
+      csv += `"GRAND TOTAL COLLECTIONS (Cash + Digital)","","","","","","","",0,0,${grandTotalCollected},${totalCashInDrawer},${digitalRepayments},"All collections audited"\n`;
+
+      // Prepend UTF-8 BOM (\uFEFF) to guarantee Excel Hindi and rupee integrity
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      const filename = isArchiveMode 
+        ? `Roznamcha_Archive_${archive?.yearId || fyMode}_${locName}_${dateTag}.csv`
+        : `Roznamcha_${locName}_${dateTag}.csv`;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

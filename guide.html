@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Operating Manual & Help Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .guide-hero {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .guide-search-wrap {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .guide-search-input {
+      flex: 1;
+      min-width: 260px;
+      padding: 0.65rem 1rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xs);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-family: var(--font-sans);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .guide-search-input:focus {
+      border-color: var(--brand-accent);
+    }
+
+    .guide-filters {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+      margin-top: 0.75rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .guide-pill {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: var(--radius-xs);
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .guide-pill:hover,
+    .guide-pill.active {
+      background: var(--brand-accent);
+      color: #ffffff;
+      border-color: var(--brand-accent);
+    }
+
+    .guide-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-card);
+      scroll-margin-top: 5rem;
+    }
+
+    .guide-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .guide-section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .guide-step-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xs);
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .guide-step-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .guide-step-body {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .guide-step-body ol,
+    .guide-step-body ul {
+      margin: 0.4rem 0 0.4rem 1.25rem;
+    }
+
+    .guide-step-body li {
+      margin-bottom: 0.35rem;
+    }
+
+    .guide-callout {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-xs);
+      font-size: 0.78rem;
+      margin: 0.75rem 0;
+      line-height: 1.45;
+    }
+
+    .guide-callout-info {
+      background: rgba(37, 99, 235, 0.08);
+      border-left: 3px solid var(--brand-accent);
+      color: var(--text-main);
+    }
+
+    .guide-callout-warning {
+      background: rgba(245, 158, 11, 0.08);
+      border-left: 3px solid var(--color-warning);
+      color: var(--text-main);
+    }
+
+    .guide-kbd {
+      font-family: var(--font-mono);
+      background: var(--bg-hover);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xs);
+      padding: 1px 5px;
+      font-size: 0.72rem;
+      color: var(--text-main);
+    }
+
+    .guide-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .guide-grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .guide-section {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Shared Header (Rendered dynamically by store.js) -->
+  <header id="sharedHeader" class="app-header"></header>
+
+  <main class="page-container">
+    
+    <!-- Hero Header Banner -->
+    <div class="guide-hero">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <h2 style="font-size:1.45rem; font-weight:800; margin-bottom:0.25rem;">Zen — Operating Manual & Help Center</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">
+            Complete procedural reference for counter billing, customer khata ledger, daybook audit, inventory stock, and Google Sheets cloud synchronization.
+          </span>
+        </div>
+        <button type="button" class="btn-ghost" id="btnToggleAllSections" style="font-size:0.75rem; padding:4px 10px;">
+          Collapse All
+        </button>
+      </div>
+
+      <div class="guide-search-wrap">
+        <input type="text" id="guideSearchInput" class="guide-search-input" placeholder="Search operating steps (e.g. 'PIN', 'Thermal', 'Rollover', 'WhatsApp', 'Recover', 'Overdue')...">
+      </div>
+
+      <div class="guide-filters" id="guideFilterBar">
+        <button type="button" class="guide-pill active" onclick="filterGuideCategory('ALL', this)">All Topics</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('BILLING', this)">Billing & Docket</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('KHATA', this)">Customers & Khata</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('DAYBOOK', this)">Daybook (Roznamcha)</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('STOCK', this)">Inventory & Wastage</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('CLOUD', this)">Google Sheets Sync</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('SAFETY', this)">Security & Recycle Bin</button>
+      </div>
+    </div>
+
+    <!-- Quick Module Jump Cards -->
+    <div class="summary-strip" style="margin-bottom:1.25rem;">
+      <a href="#sec-billing" class="strip-card" style="text-decoration:none; cursor:pointer;">
+        <span class="strip-label">Module 1</span>
+        <div class="strip-val" style="font-size:1.05rem;">Counter Billing</div>
+        <small class="text-dim">Dockets, thermal slips & WhatsApp</small>
+      </a>
+      <a href="#sec-khata" class="strip-card" style="text-decoration:none; cursor:pointer;">
+        <span class="strip-label">Module 2</span>
+        <div class="strip-val" style="font-size:1.05rem;">Khata Ledger</div>
+        <small class="text-dim">Past due, aging brackets & receipts</small>
+      </a>
+      <a href="#sec-daybook" class="strip-card" style="text-decoration:none; cursor:pointer;">
+        <span class="strip-label">Module 3</span>
+        <div class="strip-val" style="font-size:1.05rem;">Daybook Audit</div>
+        <small class="text-dim">Cash drawer vs khata recoveries</small>
+      </a>
+      <a href="#sec-cloud" class="strip-card" style="text-decoration:none; cursor:pointer;">
+        <span class="strip-label">Module 4</span>
+        <div class="strip-val" style="font-size:1.05rem;">Google Sheets</div>
+        <small class="text-dim">Live sync, rollover & cloud backup</small>
+      </a>
+    </div>
+
+    <!-- Container for Searchable Sections -->
+    <div id="guideSectionsContainer">
+
+      <!-- SECTION 1: SYSTEM CONTROLS & TOP BAR -->
+      <section class="guide-section" id="sec-controls" data-category="BILLING">
+        <div class="guide-section-header" onclick="toggleSection('sec-controls')">
+          <div class="guide-section-title">
+            <span>1. System Navigation & Header Controls</span>
+          </div>
+          <span class="badge">Global</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">1.1 Top Header Controls</div>
+            <div class="guide-step-body">
+              <ul>
+                <li><strong>Location Dropdown:</strong> Select your active selling shed or platform (e.g. <em>Main Mandi Yard</em>, <em>Wholesale Shed B</em>). All new bills will automatically tag this stall.</li>
+                <li><strong>Date Selector:</strong> Changes the operational working date. Allows inspecting past days' transactions or back-dating bills.</li>
+                <li><strong>Cloud Sync Pill:</strong> Displays connection state:
+                  <ul>
+                    <li><strong class="text-success">Synced:</strong> Local device is connected and current with Google Sheets.</li>
+                    <li><strong class="text-warning">[N] Queued:</strong> Offline bills stored safely on device, waiting for internet connection.</li>
+                    <li><strong class="text-dim">Local:</strong> Cloud sync URL not configured. Operating purely offline.</li>
+                  </ul>
+                  Clicking the pill opens immediate sync queue details and allows manual 1-click flushing.
+                </li>
+                <li><strong>Owner Lock:</strong> Toggles between Cashier Mode and Owner Unlocked mode. When cashiers are on duty, sensitive actions (resetting ledger, annual rollover, deleting bills) are locked behind the 4-digit PIN.</li>
+                <li><strong>Language Toggle (English / हिन्दी):</strong> Instantly switches all headings, receipts, and table headers between English and Hindi.</li>
+                <li><strong>Theme Toggle (Dark / Light):</strong> Switches between dark high-contrast mode (optimized for 4:00 AM auction yards) and daylight mode.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: COUNTER BILLING & DOCKET -->
+      <section class="guide-section" id="sec-billing" data-category="BILLING">
+        <div class="guide-section-header" onclick="toggleSection('sec-billing')">
+          <div class="guide-section-title">
+            <span>2. High-Speed Counter Billing & Thermal Printing</span>
+          </div>
+          <span class="badge badge-success">Core POS</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">2.1 How to Record a Bill</div>
+            <div class="guide-step-body">
+              <ol>
+                <li>Open the <strong>Billing</strong> tab from top navigation or mobile bottom bar.</li>
+                <li><strong>Select Buyer / Party:</strong>
+                  <ul>
+                    <li>Choose <strong>Walk-in Cash Buyer</strong> for spot retail sales.</li>
+                    <li>Or select a registered customer (e.g. <em>Ramesh Sabzi Bhandar</em>). The customer's past overdue and today's outstanding dues will instantly display in red.</li>
+                  </ul>
+                </li>
+                <li><strong>Choose Sale Type:</strong>
+                  <ul>
+                    <li><strong>Direct Cash:</strong> Buyer pays immediately. The cash in drawer increases.</li>
+                    <li><strong>Daily Credit (Khata):</strong> Buyer takes goods on credit. Bill amount is added to their ledger balance.</li>
+                  </ul>
+                </li>
+                <li><strong>Add Produce to Active Bill:</strong>
+                  <ul>
+                    <li>Click any produce tile from the catalog (e.g. <em>Red Tomato</em>, <em>Nashik Red Onion</em>).</li>
+                    <li>Enter the measured <strong>Weight / Quantity</strong>. The line total calculates automatically.</li>
+                    <li>Rate auto-fills from the daily auction board, but you can edit the rate inline for bargaining.</li>
+                    <li>To add an item not listed in the catalog, click <strong>+ Custom Produce</strong>.</li>
+                  </ul>
+                </li>
+                <li><strong>Complete & Print:</strong>
+                  <ul>
+                    <li>The docket computes <strong>Gross Subtotal</strong>, applies automatic <strong>Round-off</strong>, and calculates <strong>Final Payable</strong>.</li>
+                    <li>Click <strong>Complete & Print Bill</strong>.</li>
+                    <li>An 80mm thermal receipt modal appears automatically.</li>
+                  </ol>
+                </li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">2.2 Printing & WhatsApp Dispatch</div>
+            <div class="guide-step-body">
+              <ul>
+                <li><strong>Thermal Printing:</strong> In the receipt modal, click <strong>Print Thermal Slip</strong>. Optimized for 80mm and 58mm thermal receipt printers with zero margins.</li>
+                <li><strong>WhatsApp Smart Routing:</strong> Click <strong>Share on WhatsApp</strong>:
+                  <ul>
+                    <li>On Desktop PC: Opens <code>web.whatsapp.com</code> directly in your browser.</li>
+                    <li>On Mobile Phone: Launches the native WhatsApp application.</li>
+                    <li>If the customer does not have a saved phone number, an inline phone number input appears right in the modal so you can send it immediately.</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: CUSTOMER KHATA & DEBT AGING -->
+      <section class="guide-section" id="sec-khata" data-category="KHATA">
+        <div class="guide-section-header" onclick="toggleSection('sec-khata')">
+          <div class="guide-section-title">
+            <span>3. Customer Khata Ledger & Debt Recovery</span>
+          </div>
+          <span class="badge">Accounting</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">3.1 Understanding the 4-Part Balance Engine</div>
+            <div class="guide-step-body">
+              <p>Zen calculates customer dues dynamically directly from all bills and payments. Every customer row displays:</p>
+              <ul>
+                <li><strong>Past Overdue:</strong> Debt accumulated from previous trading dates minus previous payments.</li>
+                <li><strong>Today's Credit:</strong> Goods purchased on credit during the active trading day.</li>
+                <li><strong>Today's Repaid:</strong> Cash or UPI deposits collected from the customer today.</li>
+                <li><strong>Total Balance:</strong> Current live net payable due from the customer.</li>
+              </ul>
+              <div class="guide-callout guide-callout-info">
+                <strong>Advance Deposits (Jama):</strong> If a customer deposits extra cash in advance, the system automatically treats it as advance credit. Future credit purchases automatically draw against this advance deposit first.
+              </div>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">3.2 Receiving a Payment (Vasooli)</div>
+            <div class="guide-step-body">
+              <ol>
+                <li>Click <strong>Receive Payment</strong> in the Customers toolbar, or select <strong>+ Create -> Receive Payment</strong> from any screen.</li>
+                <li>Select the customer name. Their overdue balance appears immediately.</li>
+                <li>Enter the <strong>Amount Paid (₹)</strong>.</li>
+                <li>Select payment mode: <strong>CASH</strong>, <strong>UPI / GPay</strong>, or <strong>Bank NEFT / Cheque</strong>.</li>
+                <li>Click <strong>Save & Print Receipt</strong>. Customer balance adjusts immediately, drawer cash updates, and repayment receipt is ready for WhatsApp dispatch.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">3.3 Debt Aging Watchlist</div>
+            <div class="guide-step-body">
+              <p>Under the Customers tab, check the <strong>Debt Aging Watchlist</strong>. It categorizes overdue debts into:</p>
+              <ul>
+                <li><strong class="text-success">0 - 7 Days:</strong> Fresh credit (healthy).</li>
+                <li><strong class="text-warning">8 - 15 Days:</strong> Warning threshold (recovery reminder recommended).</li>
+                <li><strong style="color:#ea580c;">16 - 30 Days:</strong> High risk overdue.</li>
+                <li><strong class="text-danger">30+ Days:</strong> Critical chronic debt.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: DAYBOOK & CASH DRAWER -->
+      <section class="guide-section" id="sec-daybook" data-category="DAYBOOK">
+        <div class="guide-section-header" onclick="toggleSection('sec-daybook')">
+          <div class="guide-section-title">
+            <span>4. Daybook (Roznamcha) & Cash Drawer Audit</span>
+          </div>
+          <span class="badge">Audit</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">4.1 Daily Cash Drawer Reconciliation</div>
+            <div class="guide-step-body">
+              <p>At the close of market hours, the cashier reconciles the physical cash drawer against the Daybook summary strip:</p>
+              <ul>
+                <li><strong>Direct Spot Cash:</strong> Cash collected immediately from walk-in cash bills.</li>
+                <li><strong>Khata Debt Recoveries:</strong> Cash collected from past debtors paying off accounts.</li>
+                <li><strong>Digital Inflow (UPI):</strong> Bank transfers and QR code payments (kept separate from physical cash).</li>
+                <li><strong>Physical Cash In Register:</strong> The exact amount of currency notes that must be in your counter drawer:
+                  <div style="font-family:var(--font-mono); font-size:0.85rem; padding:0.4rem; background:var(--bg-hover); margin-top:0.35rem; border-radius:var(--radius-xs);">
+                    Total Drawer Cash = Direct Spot Cash + Repayment Cash Inflow
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">4.2 Excel & CSV Audit Export</div>
+            <div class="guide-step-body">
+              <ul>
+                <li>Click <strong>Export CSV</strong> in the Daybook toolbar to export a complete UTF-8 BOM CSV spreadsheet.</li>
+                <li>Contains Bill #, Date, Time, Location Stall, Party Name, Produce breakdown, Subtotal, Round-off, Final Amount, and Cash vs Digital breakdown.</li>
+                <li>Opens seamlessly in Microsoft Excel and Google Sheets without font corruption.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: INVENTORY & WASTAGE -->
+      <section class="guide-section" id="sec-stock" data-category="STOCK">
+        <div class="guide-section-header" onclick="toggleSection('sec-stock')">
+          <div class="guide-section-title">
+            <span>5. Produce Inventory & Spoilage/Wastage Tracking</span>
+          </div>
+          <span class="badge">Stock</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">5.1 Inward Arrivals (Aamad / Purchase)</div>
+            <div class="guide-step-body">
+              <ol>
+                <li>When fresh trucks arrive at your stall, click <strong>+ Inward Stock</strong> in the Inventory tab.</li>
+                <li>Select the produce item and enter the inward quantity (e.g. 50 crates or 500 kg).</li>
+                <li>Enter the truck vehicle number, supplier source, and purchase cost price per unit.</li>
+                <li>Current inventory stock updates immediately.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">5.2 Logging Spoilage & Wastage (Kharab / Loss)</div>
+            <div class="guide-step-body">
+              <ol>
+                <li>Perishable vegetables or fruits damaged in transit or wilted by heat must be written off to keep accounting accurate.</li>
+                <li>Click <strong>+ Log Wastage</strong> in the Inventory tab.</li>
+                <li>Select the item and enter damaged quantity. Choose reason: <em>Overripe / Rotten</em>, <em>Transit Bruising</em>, or <em>Moisture Damage</em>.</li>
+                <li>The system deducts the units from active stock and records the financial loss on your Executive Dashboard.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: GOOGLE SHEETS CLOUD SYNC -->
+      <section class="guide-section" id="sec-cloud" data-category="CLOUD">
+        <div class="guide-section-header" onclick="toggleSection('sec-cloud')">
+          <div class="guide-section-title">
+            <span>6. Google Sheets Cloud Sync & Annual Rollover</span>
+          </div>
+          <span class="badge badge-success">Cloud</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">6.1 Google Apps Script Backend Setup</div>
+            <div class="guide-step-body">
+              <ol>
+                <li>Create a Google Sheet at <code>sheets.new</code> named <code>Mandi_Ledger_2026_27</code>.</li>
+                <li>Go to <strong>Extensions -> Apps Script</strong>.</li>
+                <li>Paste the entire contents of <code>google_sheets_sync.js</code> into the editor.</li>
+                <li>Click <strong>Deploy -> New deployment</strong>. Select type <strong>Web app</strong>.</li>
+                <li>Set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong>.</li>
+                <li>Authorize Google permissions and copy the Web App URL (ends with <code>/exec</code>).</li>
+                <li>Paste this URL in Zen <strong>Settings -> Google Sheets & Cloud</strong> tab and click <strong>Save & Test Connection</strong>.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">6.2 1-Click Annual Rollover (Salana Khata Bandi)</div>
+            <div class="guide-step-body">
+              <p>When the financial year ends on March 31:</p>
+              <ol>
+                <li>Go to <strong>Settings -> Google Sheets & Cloud</strong> tab.</li>
+                <li>Review the <strong>Annual Rollover & Customer Migration</strong> preview card. It shows total parties to carry forward and outstanding closing dues.</li>
+                <li>Enter the new fiscal year label (e.g. <code>2027_28</code>).</li>
+                <li>Click <strong>Execute Annual Rollover & Carry Forward Dues</strong>.</li>
+                <li>The script automatically creates a brand new spreadsheet in your Google Drive named <code>Mandi_Ledger_2027_28</code>, migrates every party, converts their closing debts into new Opening Dues, copies produce rates, and seals the previous year as a read-only historical archive.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 7: SECURITY & RECYCLE BIN -->
+      <section class="guide-section" id="sec-safety" data-category="SAFETY">
+        <div class="guide-section-header" onclick="toggleSection('sec-safety')">
+          <div class="guide-section-title">
+            <span>7. Security PIN & Recycle Bin (Deleted Records Vault)</span>
+          </div>
+          <span class="badge badge-warn">Security</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">7.1 Owner PIN Security</div>
+            <div class="guide-step-body">
+              <ul>
+                <li>The default Owner PIN is <strong><code>1234</code></strong>.</li>
+                <li>You can update your PIN at any time in <strong>Settings -> Backup & Maintenance -> Owner Security PIN</strong>.</li>
+                <li>Whenever a cashier attempts to delete a bill, perform database resets, or change cloud configurations, Zen demands this 4-digit PIN before proceeding.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">7.2 How the Recycle Bin Works</div>
+            <div class="guide-step-body">
+              <p>Transactions deleted from Daybook are never permanently destroyed:</p>
+              <ul>
+                <li>When deleted in Daybook, the record moves into the <strong>Recycle Bin Vault</strong> in Settings.</li>
+                <li>Produce item weights are automatically returned to your inventory stock.</li>
+                <li>Ledger balances adjust immediately so the customer is not overcharged.</li>
+                <li>In Google Sheets, the row status is automatically updated to:
+                  <div style="font-family:var(--font-mono); font-size:0.8rem; background:var(--bg-hover); padding:0.35rem 0.6rem; border-radius:var(--radius-xs); margin-top:0.3rem;">
+                    VOID - Deleted by Owner (YYYY-MM-DD)
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">7.3 Restoring a Record from Recycle Bin</div>
+            <div class="guide-step-body">
+              <ol>
+                <li>Open <strong>Settings -> Backup & Maintenance</strong> tab.</li>
+                <li>Scroll to the <strong>Recycle Bin & Deleted Records Vault</strong> card.</li>
+                <li>Find the deleted bill or payment receipt in the table.</li>
+                <li>Click <strong>Restore</strong>.</li>
+                <li>The bill immediately returns to active Daybook, produce stock is re-deducted, customer debts are restored, and Google Sheets cloud status resets back to <code>ACTIVE</code>.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 8: FAQ & TROUBLESHOOTING -->
+      <section class="guide-section" id="sec-faq" data-category="ALL">
+        <div class="guide-section-header" onclick="toggleSection('sec-faq')">
+          <div class="guide-section-title">
+            <span>8. Frequently Asked Questions (FAQ)</span>
+          </div>
+          <span class="badge">FAQ</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-step-box">
+            <div class="guide-step-title">Q: Does Zen work if the internet drops in the mandi?</div>
+            <div class="guide-step-body">
+              <strong>Yes, 100%.</strong> Zen is built with offline-first architecture. All bills, payments, and ledger balances write directly to device storage. Transactions created while offline are queued and automatically uploaded to Google Sheets the moment your device reconnects to Wi-Fi or mobile data.
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">Q: How can multiple phones and laptops connect to the same shop?</div>
+            <div class="guide-step-body">
+              All devices connect to your single Google Apps Script Web App URL. When deployed on Vercel (or over local shop Wi-Fi), every cashier opens your link on their phone, and all devices sync their bills to the master Google Sheet.
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">Q: How do I back up all my data to another computer?</div>
+            <div class="guide-step-body">
+              Open <strong>Settings -> Backup & Maintenance</strong> tab and click <strong>Download Full System Image (.json)</strong>. Transfer this small file via WhatsApp, USB drive, or email to any computer, open Zen, and click <strong>Restore System Image (.json)</strong> to clone your entire shop state in 1 second.
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Mobile Bottom Nav (Rendered dynamically by store.js) -->
+  <nav id="sharedMobileNav" class="mobile-bottom-nav"></nav>
+
+  <script src="store.js?v=2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('guide');
+
+      // Search Filter Input
+      document.getElementById('guideSearchInput')?.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const sections = document.querySelectorAll('.guide-section');
+
+        sections.forEach(sec => {
+          const text = sec.textContent.toLowerCase();
+          if (!query || text.includes(query)) {
+            sec.style.display = 'block';
+            sec.querySelector('.guide-section-content').style.display = 'block';
+          } else {
+            sec.style.display = 'none';
+          }
+        });
+      });
+
+      // Toggle All button
+      let allExpanded = true;
+      document.getElementById('btnToggleAllSections')?.addEventListener('click', (e) => {
+        allExpanded = !allExpanded;
+        e.target.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+        document.querySelectorAll('.guide-section-content').forEach(c => {
+          c.style.display = allExpanded ? 'block' : 'none';
+        });
+      });
+    });
+
+    function toggleSection(secId) {
+      const sec = document.getElementById(secId);
+      if (!sec) return;
+      const content = sec.querySelector('.guide-section-content');
+      if (content) {
+        content.style.display = (content.style.display === 'none') ? 'block' : 'none';
+      }
+    }
+
+    function filterGuideCategory(cat, btn) {
+      document.querySelectorAll('.guide-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const sections = document.querySelectorAll('.guide-section');
+      sections.forEach(sec => {
+        const itemCat = sec.getAttribute('data-category');
+        if (cat === 'ALL' || itemCat === cat || sec.id === 'sec-faq') {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

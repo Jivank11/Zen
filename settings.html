@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .settings-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.35rem;
+      box-shadow: var(--shadow-subtle);
+    }
+    .card-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .location-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .loc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xs);
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Shared Header (Rendered dynamically by store.js) -->
+  <header id="sharedHeader" class="app-header"></header>
+
+  <main class="page-container">
+    
+    <div class="page-header" style="margin-bottom:1rem;">
+      <div>
+        <h2 class="page-title" data-i18n="nav_settings">Settings & Management</h2>
+        <span class="text-dim" style="font-size:0.75rem;">Configure firm profile, Excel/CSV sync, daily shop SOPs, and system backups</span>
+      </div>
+    </div>
+
+    <!-- Modern Tab Bar -->
+    <div class="settings-tab-bar">
+      <button type="button" class="settings-tab-btn active" id="tabBtn-profile" onclick="switchSettingsTab('profile', this)">Shop & Stalls</button>
+      <button type="button" class="settings-tab-btn" id="tabBtn-excel" onclick="switchSettingsTab('excel', this)">Excel & CSV Data</button>
+      <button type="button" class="settings-tab-btn" id="tabBtn-cloud" onclick="switchSettingsTab('cloud', this)">Google Sheets & Cloud</button>
+      <button type="button" class="settings-tab-btn" id="tabBtn-checklist" onclick="switchSettingsTab('checklist', this)">Daily SOP Checklist</button>
+      <button type="button" class="settings-tab-btn" id="tabBtn-backup" onclick="switchSettingsTab('backup', this)">Backup & Maintenance</button>
+    </div>
+
+    <!-- TAB 1: Shop Profile & Stalls -->
+    <div id="tab-profile" class="settings-tab-pane active">
+      <div class="settings-2col">
+        
+        <!-- Left: Shop Profile Form -->
+        <div class="settings-card">
+          <h3 class="card-title">Shop Profile & Thermal Slip Header</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1.15rem;">
+            Configure your firm details printed on 80mm thermal receipts and customer Khata statements.
+          </p>
+          <form id="shopProfileForm" style="padding:0;">
+            <div class="form-group">
+              <label class="form-label">Shop / Firm Name *</label>
+              <input type="text" id="cfgShopName" class="form-input" placeholder="e.g. Mandi Commission Agency" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subtitle / Produce Tagline</label>
+              <input type="text" id="cfgShopSubtitle" class="form-input" placeholder="e.g. Wholesale Fruits & Vegetables">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mandi Yard / Platform Address</label>
+              <input type="text" id="cfgShopAddress" class="form-input" placeholder="e.g. Main Mandi Yard, Gate No. 2">
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Contact / Phone Number</label>
+                <input type="tel" id="cfgShopPhone" class="form-input font-mono" placeholder="e.g. 9845012345">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Standard Commission Rate (%)</label>
+                <input type="number" id="cfgShopCommission" class="form-input font-mono" step="0.1" min="0" max="100" placeholder="5.0">
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;">
+              <span id="shopProfileSavedMsg" class="text-success hidden" style="font-size:0.8rem; font-weight:600;">Saved successfully!</span>
+              <button type="submit" class="btn-primary" style="margin-left:auto;">Save Shop Profile</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Stalls List + Live Slip Header Preview -->
+        <div>
+          <div class="settings-card" style="margin-bottom:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <div>
+                <h3 class="card-title" style="margin-bottom:0.15rem;">Market Stalls & Locations</h3>
+                <span class="text-dim" style="font-size:0.75rem;">Manage active counters and platforms</span>
+              </div>
+              <button type="button" class="btn-primary" style="padding:4px 10px; font-size:0.75rem;" onclick="openGlobalLocationModal()">+ Add Stall</button>
+            </div>
+            <ul class="location-list" id="settingsLocList">
+              <!-- Rendered via JS -->
+            </ul>
+          </div>
+
+          <!-- Live Thermal Slip Header Preview -->
+          <div class="settings-card">
+            <h3 class="card-title" style="margin-bottom:0.25rem;">Thermal Receipt Slip Preview</h3>
+            <span class="text-dim" style="font-size:0.75rem;">Live preview on 80mm thermal paper:</span>
+            <div class="receipt-preview-card">
+              <div style="text-align:center; font-weight:800; font-size:0.95rem; text-transform:uppercase;" id="prevShopName">MANDI COMMISSION AGENCY</div>
+              <div style="text-align:center; font-size:0.72rem; color:#444;" id="prevShopSub">Wholesale Fruits & Vegetables</div>
+              <div style="text-align:center; font-size:0.72rem;" id="prevShopAddr">Main Mandi Yard, Gate No. 2</div>
+              <div style="text-align:center; font-size:0.72rem; font-weight:700;" id="prevShopPhone">Ph: 9845012345</div>
+              <div style="border-top:1px dashed #777; margin-top:8px; padding-top:4px; font-size:0.7rem; display:flex; justify-content:space-between;">
+                <span id="prevSampleBillNo">BILL #1001</span>
+                <span id="prevSampleBillDate">2026-10-09</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:#555; margin-top:3px;">
+                <span>Counter: <strong id="prevSampleLoc">Main Yard</strong></span>
+                <span>Commission: <strong id="prevSampleComm">5.0%</strong></span>
+              </div>
+              <div style="border-top:1px dashed #ccc; margin-top:5px; padding-top:4px; font-size:0.68rem; color:#333;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span id="prevSampleItem">Red Tomato (Hybrid) - 20 kg @ ₹35</span>
+                  <span id="prevSampleLineTotal">₹700.00</span>
+                </div>
+              </div>
+              <div style="border-top:1px dashed #777; margin-top:5px; padding-top:3px; font-size:0.74rem; font-weight:700; display:flex; justify-content:space-between;">
+                <span>TOTAL NET AMOUNT:</span>
+                <span id="prevSampleFinalTotal">₹700.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: Excel & CSV Data Center -->
+    <div id="tab-excel" class="settings-tab-pane">
+      <div class="settings-2col">
+        
+        <!-- Left: Export Center -->
+        <div class="settings-card">
+          <h3 class="card-title">Export Records to Excel</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1.15rem;">
+            Download clean .csv spreadsheets with UTF-8 BOM encoding. Opens instantly in Microsoft Excel, Google Sheets, or mobile WPS Office without garbled text.
+          </p>
+
+          <div class="excel-export-card">
+            <div>
+              <strong style="font-size:0.86rem; display:block;">Customer Khata Ledger (CSV)</strong>
+              <span class="text-dim" style="font-size:0.74rem;" id="exportCustStat">All parties, phone numbers, past dues, and current balances</span>
+            </div>
+            <button type="button" class="btn-ghost" style="padding:0.4rem 0.9rem; font-size:0.75rem;" onclick="exportCustomersCsv()">Export Excel</button>
+          </div>
+
+          <div class="excel-export-card">
+            <div>
+              <strong style="font-size:0.86rem; display:block;">Produce Rates Master (CSV)</strong>
+              <span class="text-dim" style="font-size:0.74rem;" id="exportItemStat">Price board, produce categories, units, and active wholesale rates</span>
+            </div>
+            <button type="button" class="btn-ghost" style="padding:0.4rem 0.9rem; font-size:0.75rem;" onclick="exportItemsCsv()">Export Excel</button>
+          </div>
+
+          <div class="excel-export-card">
+            <div>
+              <strong style="font-size:0.86rem; display:block;">Sales Register & Daily Bills (CSV)</strong>
+              <span class="text-dim" style="font-size:0.74rem;" id="exportSaleStat">Full register with transaction types, buyer names, and cash collected</span>
+            </div>
+            <button type="button" class="btn-ghost" style="padding:0.4rem 0.9rem; font-size:0.75rem;" onclick="exportSalesCsv()">Export Excel</button>
+          </div>
+
+          <div class="excel-export-card">
+            <div>
+              <strong style="font-size:0.86rem; display:block;">Khata Payment Receipts Register (CSV)</strong>
+              <span class="text-dim" style="font-size:0.74rem;" id="exportPaymentStat">Full register of debt repayments, payment modes, and cash collections</span>
+            </div>
+            <button type="button" class="btn-ghost" style="padding:0.4rem 0.9rem; font-size:0.75rem;" onclick="exportPaymentsCsv()">Export Excel</button>
+          </div>
+        </div>
+
+        <!-- Right: Import Center (Bulk Onboarding) -->
+        <div class="settings-card">
+          <h3 class="card-title">Import Records from Excel (Bulk Add)</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1.15rem;">
+            Upload existing customer paper diaries or supplier rate sheets directly into Mandi.
+          </p>
+
+          <!-- 1. Customer Import Box -->
+          <div class="excel-import-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.25rem;">
+              <strong style="font-size:0.84rem;">1. Bulk Import Customers & Khata Dues</strong>
+              <a href="javascript:void(0)" class="csv-link-template" onclick="downloadCustomerTemplateCsv()">Download Sample Template</a>
+            </div>
+            <p style="font-size:0.74rem; color:var(--text-muted); margin-bottom:0.65rem;">
+              Columns: <code>Party Name</code>, <code>Phone Number</code>, <code>Opening Due</code>. Existing parties have dues safely updated.
+            </p>
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+              <label class="btn-primary" style="padding:0.4rem 0.9rem; font-size:0.75rem; cursor:pointer; margin:0;">
+                Select Customer CSV File
+                <input type="file" id="importCustomerCsvInput" accept=".csv" style="display:none;">
+              </label>
+              <span id="importCustomerStatus" style="font-size:0.75rem; color:var(--text-dim);">No file chosen</span>
+            </div>
+          </div>
+
+          <!-- 2. Produce Rates Import Box -->
+          <div class="excel-import-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.25rem;">
+              <strong style="font-size:0.84rem;">2. Bulk Import Produce Rates Catalog</strong>
+              <a href="javascript:void(0)" class="csv-link-template" onclick="downloadItemTemplateCsv()">Download Sample Template</a>
+            </div>
+            <p style="font-size:0.74rem; color:var(--text-muted); margin-bottom:0.65rem;">
+              Columns: <code>Produce Name</code>, <code>Category</code>, <code>Unit</code>, <code>Wholesale Rate</code>.
+            </p>
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+              <label class="btn-primary" style="padding:0.4rem 0.9rem; font-size:0.75rem; cursor:pointer; margin:0;">
+                Select Produce CSV File
+                <input type="file" id="importItemCsvInput" accept=".csv" style="display:none;">
+              </label>
+              <span id="importItemStatus" style="font-size:0.75rem; color:var(--text-dim);">No file chosen</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB: Google Sheets & Cloud Sync -->
+    <div id="tab-cloud" class="settings-tab-pane">
+      <div class="settings-2col">
+
+        <!-- Left: Google Sheets Connection & Live Capacity Monitor -->
+        <div>
+          <!-- Connection Settings Card -->
+          <div class="settings-card" style="margin-bottom:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <h3 class="card-title" style="margin:0;">Google Sheets Cloud Sync</h3>
+              <span id="cloudStatusBadge" class="cloud-status-badge disconnected">
+                <span class="cloud-indicator-dot"></span>
+                <span id="cloudStatusText">Offline</span>
+              </span>
+            </div>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">
+              Connect your Google Sheet via Google Apps Script Web App for real-time cloud backup, automatic annual partitioning, and multi-device access.
+            </p>
+
+            <form id="cloudConfigForm" style="padding:0;">
+              <div class="form-group">
+                <label class="form-label">Google Apps Script Web App URL</label>
+                <input type="url" id="cloudScriptUrlInput" class="form-input font-mono" placeholder="https://script.google.com/macros/s/.../exec">
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Active Financial Year</label>
+                  <input type="text" id="cloudActiveYearInput" class="form-input font-mono" placeholder="2026_27">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Spreadsheet Name</label>
+                  <input type="text" id="cloudSpreadsheetNameInput" class="form-input" placeholder="Mandi_Ledger_2026_27" readonly style="opacity:0.85;">
+                </div>
+              </div>
+
+              <div style="margin-top:0.75rem; margin-bottom:1rem;">
+                <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; cursor:pointer;">
+                  <input type="checkbox" id="cloudAutoSyncCheckbox" checked>
+                  <span>Auto-sync bills & repayments in background</span>
+                </label>
+              </div>
+
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                <button type="submit" class="btn-primary" style="padding:0.4rem 1rem; font-size:0.78rem;">Save & Test Connection</button>
+                <button type="button" class="btn-ghost" id="btnSyncAllMasterData" style="padding:0.4rem 0.9rem; font-size:0.78rem;">Sync Master Catalog Now</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Capacity Meter Card -->
+          <div class="settings-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h3 class="card-title" style="margin:0;">Cloud Sheet Storage Capacity</h3>
+              <button type="button" class="btn-ghost" id="btnRefreshCapacity" style="padding:2px 8px; font-size:0.72rem;">Refresh</button>
+            </div>
+            <p style="font-size:0.76rem; color:var(--text-muted); margin-top:0.25rem; margin-bottom:0.75rem;">
+              Google Sheets capacity tracker (safe threshold: 50,000 rows per active sales sheet).
+            </p>
+
+            <div class="capacity-meter-box" style="margin-top:0.5rem; margin-bottom:0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem;">
+                <span>Active Sales Sheet Usage:</span>
+                <strong id="capacityUsageText" class="font-mono">0 / 50,000 rows (0%)</strong>
+              </div>
+              <div class="capacity-progress-wrap">
+                <div class="capacity-progress-bar">
+                  <div id="capacityProgressFill" class="capacity-progress-fill" style="width:0%;"></div>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-dim);">
+                <span id="capacityRemainingText">50,000 rows remaining</span>
+                <span>Cell limit: 10,000,000 cells</span>
+              </div>
+            </div>
+
+            <!-- Dynamic 5,000 Row Warning Callout -->
+            <div id="capacityWarningCallout" class="hidden" style="padding:0.75rem; background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); border-radius:var(--radius-xs); margin-top:0.75rem;">
+              <strong style="color:#f59e0b; font-size:0.78rem; display:block;">Capacity Alert: Less than 5,000 rows remaining</strong>
+              <span style="font-size:0.73rem; color:var(--text-muted);">
+                Your active sales sheet is filling up. To maintain fast performance, perform the 1-Click Annual Rollover on the right to start a fresh sheet without losing any customer dues.
+              </span>
+            </div>
+          </div>
+
+          <!-- Offline Pending Sync Queue Card -->
+          <div class="settings-card" style="margin-top:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+              <h3 class="card-title" style="margin:0;">Offline Sync Queue</h3>
+              <span id="settingsSyncBadge" class="badge">0 Queued</span>
+            </div>
+            <p style="font-size:0.76rem; color:var(--text-muted); margin-top:0.25rem; margin-bottom:0.75rem;">
+              Transactions made while offline on mobile are safely queued in device storage and automatically upload when internet connects.
+            </p>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn-primary" id="btnFlushSettingsQueue" style="padding:0.4rem 0.9rem; font-size:0.76rem;">Flush & Sync Now</button>
+              <span id="settingsSyncQueueStatus" style="font-size:0.72rem; color:var(--text-dim);">All records synchronized</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Annual Rollover & Customer Khata Migration -->
+        <div>
+          <!-- Rollover Hero Card -->
+          <div class="settings-card" style="margin-bottom:1.25rem;">
+            <h3 class="card-title" style="margin-bottom:0.25rem;">Annual Rollover & Customer Migration</h3>
+            <span class="text-dim" style="font-size:0.74rem;">Salana Khata Bandi (One Spreadsheet Per Year)</span>
+            
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-top:0.6rem; margin-bottom:0.85rem;">
+              Transition to a brand new Google Spreadsheet for the new financial year. All customers, produce items, and stalls are migrated automatically, and each customer's final balance is carried forward as their new Opening Due.
+            </p>
+
+            <div class="rollover-stat-grid">
+              <div class="rollover-stat-box">
+                <span class="text-dim" style="font-size:0.7rem;">Customers to Migrate</span>
+                <span id="rolloverCustCount" class="rollover-stat-val text-accent">0</span>
+              </div>
+              <div class="rollover-stat-box">
+                <span class="text-dim" style="font-size:0.7rem;">Parties with Dues</span>
+                <span id="rolloverDuesCount" class="rollover-stat-val text-warning">0</span>
+              </div>
+              <div class="rollover-stat-box">
+                <span class="text-dim" style="font-size:0.7rem;">Total Carried Forward</span>
+                <span id="rolloverTotalDues" class="rollover-stat-val">₹0</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:0.85rem;">
+              <label class="form-label">New Target Financial Year Label</label>
+              <input type="text" id="rolloverTargetYearInput" class="form-input font-mono" placeholder="2027_28" value="2027_28">
+            </div>
+
+            <div style="padding:0.75rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--radius-xs); margin-bottom:1rem; font-size:0.74rem; color:var(--text-muted);">
+              <strong>Automated Steps on Confirmation:</strong>
+              <ul style="margin:0.35rem 0 0 1.1rem; padding:0; line-height:1.4;">
+                <li>Creates fresh Google Sheet: <code id="rolloverTargetSheetCode">Mandi_Ledger_2027_28</code>.</li>
+                <li>Copies all customers with net dues set as new Opening Balance.</li>
+                <li>Archives previous year's sheet in Google Drive as read-only.</li>
+                <li>Resets daily sales counter for fresh fiscal year.</li>
+              </ul>
+            </div>
+
+            <button type="button" class="btn-primary" id="btnExecuteRollover" style="width:100%; text-align:center; padding:0.6rem;">
+              Execute Annual Rollover & Carry Forward Dues
+            </button>
+          </div>
+
+          <!-- Closed Financial Years & Archived Ledgers Hub -->
+          <div class="settings-card" style="margin-bottom:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+              <h3 class="card-title" style="margin:0;">Closed Financial Years & Archives</h3>
+              <span id="archivedYearsBadge" class="badge badge-success">0 Closed Years</span>
+            </div>
+            <span class="text-dim" style="font-size:0.74rem;">Historical records, past Google Spreadsheets & audit books</span>
+
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-top:0.6rem; margin-bottom:0.85rem;">
+              Browse past years' ledgers, verify historic bills for customer disputes or CA tax filing, open archived Google Spreadsheets, or export historical CSV registers.
+            </p>
+
+            <div id="archivedYearsContainer">
+              <!-- Rendered dynamically via JS -->
+            </div>
+          </div>
+
+          <!-- Quick Setup Guide Collapsible -->
+          <div class="settings-card">
+            <h3 class="card-title" style="margin-bottom:0.25rem;">Apps Script Setup Guide</h3>
+            <span class="text-dim" style="font-size:0.74rem;">Ready-to-use backend in 60 seconds</span>
+            
+            <p style="font-size:0.76rem; color:var(--text-muted); margin-top:0.5rem; margin-bottom:0.75rem;">
+              The full Google Apps Script backend is included in your project as <code>google_sheets_sync.js</code>.
+            </p>
+
+            <div class="code-guide-box" style="margin-bottom:0.75rem;">
+1. Open Google Sheets (sheets.new)
+2. Go to: Extensions -> Apps Script
+3. Copy code from 'google_sheets_sync.js' and paste it
+4. Click Deploy -> New deployment -> Web app
+5. Set: Execute as 'Me', Who has access: 'Anyone'
+6. Copy Web App URL and paste on the left
+            </div>
+
+            <button type="button" class="btn-ghost" id="btnCopySetupInfo" style="font-size:0.74rem; padding:4px 10px;">
+              Copy Setup Guide Info
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 3: Daily Shop SOP & Custom Checklist -->
+    <div id="tab-checklist" class="settings-tab-pane">
+      <div class="settings-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <h3 class="card-title" style="margin-bottom:0.2rem;">Daily Shop SOP & Custom Checklist</h3>
+            <span style="font-size:0.78rem; color:var(--text-muted);" id="checklistProgressText">Loading checklist...</span>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button type="button" class="btn-ghost" id="btnResetChecklistToday" style="padding:3px 10px; font-size:0.75rem;">Reset for New Day</button>
+            <button type="button" class="btn-ghost" id="btnRestoreDefaultChecklist" style="padding:3px 10px; font-size:0.75rem; color:var(--text-dim);">Restore Default Mandi SOPs</button>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="checklist-progress-wrap">
+          <div class="checklist-progress-bar">
+            <div id="checklistProgressBarFill" class="checklist-progress-fill" style="width:0%;"></div>
+          </div>
+        </div>
+
+        <!-- Phase Filter Pills -->
+        <div style="display:flex; gap:0.4rem; margin-bottom:0.85rem; flex-wrap:wrap;">
+          <button type="button" class="btn-ghost filter-pill active" onclick="filterChecklist('ALL', this)" style="padding:2px 8px; font-size:0.74rem;">All Tasks</button>
+          <button type="button" class="btn-ghost filter-pill" onclick="filterChecklist('Morning Opening', this)" style="padding:2px 8px; font-size:0.74rem;">Morning Opening</button>
+          <button type="button" class="btn-ghost filter-pill" onclick="filterChecklist('Daytime Rush', this)" style="padding:2px 8px; font-size:0.74rem;">Daytime Rush</button>
+          <button type="button" class="btn-ghost filter-pill" onclick="filterChecklist('Night Closing', this)" style="padding:2px 8px; font-size:0.74rem;">Night Closing</button>
+          <button type="button" class="btn-ghost filter-pill" onclick="filterChecklist('Custom Tasks', this)" style="padding:2px 8px; font-size:0.74rem;">Custom Tasks</button>
+        </div>
+
+        <!-- Task Items Container -->
+        <div id="checklistItemsContainer">
+          <!-- Rendered dynamically via JS -->
+        </div>
+
+        <!-- Add New Custom Task Bar -->
+        <form id="addChecklistTaskForm" class="checklist-add-bar">
+          <input type="text" id="newTaskTextInput" class="form-input" placeholder="Type custom daily task (e.g. Charge electronic scale, Check potato truck arrival)..." required>
+          <select id="newTaskPhaseSelect" class="form-select" style="width:160px;">
+            <option value="Morning Opening">Morning Opening</option>
+            <option value="Daytime Rush">Daytime Rush</option>
+            <option value="Night Closing">Night Closing</option>
+            <option value="Custom Tasks" selected>Custom Tasks</option>
+          </select>
+          <button type="submit" class="btn-primary" style="padding:0.4rem 1.1rem;">+ Add Task</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 4: Backup & Maintenance -->
+    <div id="tab-backup" class="settings-tab-pane">
+      <div class="settings-2col">
+        
+        <!-- Recycle Bin & Deleted Records Vault (Spans 2 columns) -->
+        <div class="settings-card" style="grid-column: 1 / -1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.4rem;">
+            <div>
+              <h3 class="card-title" style="margin:0; display:inline-flex; align-items:center; gap:0.5rem;">
+                <span>Recycle Bin & Deleted Records Vault</span>
+                <span id="recycleBinBadge" class="badge">0 items</span>
+              </h3>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button type="button" class="btn-ghost" id="btnEmptyRecycleBin" style="color:var(--color-danger); border-color:var(--color-danger-border); font-size:0.75rem; padding:4px 10px;">
+                Empty Recycle Bin
+              </button>
+            </div>
+          </div>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.85rem;">
+            Transactions deleted from Daybook are safely quarantined here. Restoring a record immediately returns it back to live Daybook, updates customer ledger balances, restores inventory stock, and synchronizes status back to ACTIVE in Google Sheets.
+          </p>
+
+          <div class="table-container" style="max-height: 380px; overflow-y:auto; border:1px solid var(--border-subtle); border-radius:var(--radius-xs);">
+            <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+              <thead>
+                <tr style="background:var(--bg-subtle); border-bottom:1px solid var(--border-subtle); text-align:left;">
+                  <th style="padding:0.6rem 0.75rem;">Ref / Bill #</th>
+                  <th style="padding:0.6rem 0.75rem;">Type</th>
+                  <th style="padding:0.6rem 0.75rem;">Party Name</th>
+                  <th style="padding:0.6rem 0.75rem;">Items / Note</th>
+                  <th style="padding:0.6rem 0.75rem;">Original Date</th>
+                  <th style="padding:0.6rem 0.75rem;">Deleted At</th>
+                  <th style="padding:0.6rem 0.75rem; text-align:right;">Amount</th>
+                  <th style="padding:0.6rem 0.75rem; text-align:center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="recycleBinTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+            <div id="recycleBinEmptyState" style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted); font-size:0.82rem; display:none;">
+              Recycle bin is clean. No deleted transactions in vault.
+            </div>
+          </div>
+        </div>
+
+        <!-- PC-to-PC Full Database Cloning -->
+        <div class="settings-card">
+          <h3 class="card-title">Full Database Image (PC-to-PC Clone)</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">
+            Download a complete raw JSON snapshot of your entire database (stalls, customers, catalog, bills, repayments, and checklist) to transfer to another computer or keep as an emergency restore point.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:0.65rem;">
+            <button type="button" class="btn-ghost" id="btnDownloadBackup" style="text-align:left; padding:0.65rem 0.95rem;">
+              Download Full System Image (.json)
+            </button>
+            <div id="backupDataStats" style="font-size:0.74rem; color:var(--text-dim); margin-left:0.25rem;"></div>
+            <label class="btn-ghost" style="cursor:pointer; text-align:left; display:block; padding:0.65rem 0.95rem; margin:0;">
+              Restore System Image (.json)
+              <input type="file" id="settingsRestoreFile" accept=".json" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <!-- Owner Security PIN & Access Control -->
+        <div class="settings-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+            <h3 class="card-title" style="margin:0;">Owner Security PIN & Lock</h3>
+            <span id="settingsPinStatusBadge" class="badge">Cashier Mode</span>
+          </div>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.85rem;">
+            Protects dangerous operations (database resets, annual rollover, bill deletions, and cloud credentials) behind a 4-digit numeric PIN.
+          </p>
+
+          <form id="settingsChangePinForm" style="padding:0; margin-bottom:0.75rem;">
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Current PIN</label>
+                <input type="password" id="inputCurrentPin" class="form-input font-mono" maxlength="4" placeholder="••••" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">New 4-Digit PIN</label>
+                <input type="password" id="inputNewPin" class="form-input font-mono" maxlength="4" placeholder="••••" required>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%; padding:0.5rem;">Update Owner PIN</button>
+          </form>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.75rem; background:var(--bg-subtle); border-radius:var(--radius-xs); font-size:0.74rem;">
+            <span>Current Session: <strong id="settingsSessionStateText">Locked</strong></span>
+            <button type="button" class="btn-ghost" id="btnToggleSettingsSessionLock" style="padding:2px 8px; font-size:0.72rem;">Unlock Owner Mode</button>
+          </div>
+        </div>
+
+        <!-- Factory Reset & Demo Data -->
+        <div class="settings-card">
+          <h3 class="card-title" style="color:var(--color-danger);">System Reset & Factory Defaults</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">
+            Reset your database to the clean initial demo dataset. Useful for clearing out test transactions and restarting fresh.
+          </p>
+          <div style="padding:0.85rem; background:var(--color-danger-bg); border:1px solid var(--color-danger-border); border-radius:var(--radius-xs); margin-bottom:1rem;">
+            <strong style="color:var(--color-danger); font-size:0.78rem; display:block;">Warning: Irreversible Action</strong>
+            <span style="font-size:0.74rem; color:var(--text-muted);">Resetting will wipe current transactions. Export an Excel backup first if you need to keep records.</span>
+          </div>
+          <button type="button" class="btn-primary" id="btnLoadRichTest" style="width:100%; text-align:center; margin-bottom:0.75rem; padding:0.6rem 1rem;">
+            Load Complete Mandi Test Dataset (20 Items, 10 Parties, Multi-day Aging)
+          </button>
+          <button type="button" class="btn-ghost" id="btnResetDemo" style="color:var(--color-danger); border-color:var(--color-danger-border); width:100%; text-align:center;">
+            Reset to Clean Defaults (Fresh Empty Shop Ledger)
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Mobile Bottom Nav (Rendered dynamically by store.js) -->
+  <nav id="sharedMobileNav" class="mobile-bottom-nav"></nav>
+
+  <script src="store.js?v=2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('settings');
+      renderLocationsList();
+      initShopProfile();
+      initDynamicChecklist();
+      initCsvImportListeners();
+      initCloudSyncTab();
+      renderExportStats();
+      renderBackupStats();
+      renderRecycleBin();
+      renderArchivedYearsList();
+      renderSettingsSyncQueue();
+      initSecurityPinSettings();
+
+      window.addEventListener('mandi:sync-queue-updated', renderSettingsSyncQueue);
+      window.addEventListener('mandi:owner-lock-changed', renderSettingsPinStatus);
+      window.addEventListener('mandi:security-updated', renderSettingsPinStatus);
+      window.addEventListener('mandi:recycle-bin-updated', () => {
+        renderRecycleBin();
+        renderBackupStats();
+      });
+
+      // Empty Recycle Bin
+      document.getElementById('btnEmptyRecycleBin')?.addEventListener('click', () => {
+        const count = store.getRecycleBin().length;
+        if (count === 0) {
+          alert('Recycle bin is already empty.');
+          return;
+        }
+        promptOwnerPin('Empty Recycle Bin', () => {
+          if (confirm(`Permanently purge all ${count} records in the Recycle Bin? This cannot be undone.`)) {
+            store.emptyRecycleBin();
+            renderRecycleBin();
+            alert('Recycle bin has been emptied.');
+          }
+        });
+      });
+
+      // Advanced JSON Backup
+      document.getElementById('btnDownloadBackup')?.addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(store.data, null, 2));
+        const dl = document.createElement('a');
+        dl.setAttribute("href", dataStr);
+        dl.setAttribute("download", `mandi_backup_${store.currentDate}.json`);
+        document.body.appendChild(dl);
+        dl.click();
+        dl.remove();
+      });
+
+      // Advanced JSON Restore
+      document.getElementById('settingsRestoreFile')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const parsed = JSON.parse(event.target.result);
+            if (parsed.sales && parsed.customers && parsed.items) {
+              store.save(parsed);
+              alert('Full system backup restored successfully!');
+              window.location.reload();
+            } else {
+              alert('Invalid backup file format!');
+            }
+          } catch (err) {
+            alert('Error parsing file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // Load Rich Test Dataset
+      document.getElementById('btnLoadRichTest')?.addEventListener('click', () => {
+        promptOwnerPin('Load Test Dataset', () => {
+          if (confirm('Load the complete realistic Mandi test dataset? This will load 20 produce items, 10 parties with advance deposits and aging debt, and 15 multi-day transactions.')) {
+            store.reset();
+            alert('Complete realistic Mandi test dataset loaded successfully!');
+            window.location.reload();
+          }
+        });
+      });
+
+      // Reset Demo Dataset (Clean Empty Slate for Live Billing)
+      document.getElementById('btnResetDemo')?.addEventListener('click', () => {
+        promptOwnerPin('Reset Database to Clean Defaults', () => {
+          if (confirm('Reset to clean empty shop ledger? This erases transactions and debts to zero while keeping shop profile and produce catalog so you can start live billing.')) {
+            store.resetToCleanSlate();
+            alert('Data reset to clean empty shop ledger! Ready for fresh billing.');
+            window.location.reload();
+          }
+        });
+      });
+
+      // Real-Time Event Listeners
+      window.addEventListener('mandi:location-saved', () => {
+        renderLocationsList();
+        renderSharedHeader('settings');
+        updateSlipPreview();
+        renderBackupStats();
+      });
+
+      window.addEventListener('mandi:customer-saved', () => {
+        renderRolloverPreview();
+        renderExportStats();
+        renderBackupStats();
+      });
+
+      window.addEventListener('mandi:item-saved', () => {
+        renderExportStats();
+        renderBackupStats();
+        updateSlipPreview();
+      });
+
+      window.addEventListener('mandi:sale-saved', () => {
+        renderCapacityMeter();
+        renderRolloverPreview();
+        renderExportStats();
+        renderBackupStats();
+        updateSlipPreview();
+      });
+
+      window.addEventListener('mandi:payment-saved', () => {
+        renderRolloverPreview();
+        renderExportStats();
+        renderBackupStats();
+      });
+
+      window.addEventListener('mandi:checklist-updated', () => {
+        renderChecklist();
+      });
+
+      window.addEventListener('mandi:annual-rollover-completed', () => {
+        renderRolloverPreview();
+        renderArchivedYearsList();
+        renderBackupStats();
+        renderExportStats();
+      });
+
+      window.addEventListener('mandi:storage-sync', () => {
+        renderLocationsList();
+        initShopProfile();
+        renderExportStats();
+        renderCapacityMeter();
+        renderRolloverPreview();
+        renderArchivedYearsList();
+        renderChecklist();
+        renderBackupStats();
+      });
+
+      window.addEventListener('storage', () => {
+        renderLocationsList();
+        initShopProfile();
+        renderExportStats();
+        renderCapacityMeter();
+        renderRolloverPreview();
+        renderArchivedYearsList();
+        renderChecklist();
+        renderBackupStats();
+      });
+    });
+
+    // -------------------------------------------------------------
+    // TAB CONTROLLER
+    // -------------------------------------------------------------
+    function switchSettingsTab(tabName, btnElement) {
+      document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.settings-tab-pane').forEach(p => p.classList.remove('active'));
+      
+      if (btnElement) {
+        btnElement.classList.add('active');
+      } else {
+        document.getElementById(`tabBtn-${tabName}`)?.classList.add('active');
+      }
+      
+      const targetPane = document.getElementById(`tab-${tabName}`);
+      if (targetPane) targetPane.classList.add('active');
+      if (tabName === 'backup') {
+        renderRecycleBin();
+        renderBackupStats();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SHOP PROFILE & RECEIPT PREVIEW CONTROLLER
+    // -------------------------------------------------------------
+    function initShopProfile() {
+      const p = store.data.shopProfile || {};
+      const nameInput = document.getElementById('cfgShopName');
+      const subInput = document.getElementById('cfgShopSubtitle');
+      const addrInput = document.getElementById('cfgShopAddress');
+      const phoneInput = document.getElementById('cfgShopPhone');
+      const commInput = document.getElementById('cfgShopCommission');
+
+      if (nameInput) nameInput.value = p.name || '';
+      if (subInput) subInput.value = p.subtitle || '';
+      if (addrInput) addrInput.value = p.address || '';
+      if (phoneInput) phoneInput.value = p.phone || '';
+      if (commInput) commInput.value = p.commissionRate !== undefined ? p.commissionRate : 5.0;
+
+      updateSlipPreview();
+
+      [nameInput, subInput, addrInput, phoneInput, commInput].forEach(inp => {
+        inp?.addEventListener('input', updateSlipPreview);
+      });
+
+      document.getElementById('shopProfileForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newName = nameInput.value.trim() || 'Mandi Commission Agency';
+        const newSub = subInput.value.trim();
+        const newAddr = addrInput.value.trim();
+        const newPhone = phoneInput.value.trim();
+        const newComm = parseFloat(commInput.value) || 5.0;
+
+        store.data.shopProfile = {
+          name: newName,
+          subtitle: newSub,
+          address: newAddr,
+          phone: newPhone,
+          commissionRate: newComm
+        };
+        store.save(store.data);
+        updateSlipPreview();
+        renderBackupStats();
+
+        const msg = document.getElementById('shopProfileSavedMsg');
+        if (msg) {
+          msg.classList.remove('hidden');
+          setTimeout(() => msg.classList.add('hidden'), 3000);
+        }
+      });
+    }
+
+    function updateSlipPreview() {
+      const name = document.getElementById('cfgShopName')?.value.trim() || store.data.shopProfile?.name || 'MANDI COMMISSION AGENCY';
+      const sub = document.getElementById('cfgShopSubtitle')?.value.trim() || store.data.shopProfile?.subtitle || 'Wholesale Fruits & Vegetables';
+      const addr = document.getElementById('cfgShopAddress')?.value.trim() || store.data.shopProfile?.address || 'Main Mandi Yard, Gate No. 2';
+      const phone = document.getElementById('cfgShopPhone')?.value.trim() || store.data.shopProfile?.phone || '9845012345';
+      const comm = document.getElementById('cfgShopCommission')?.value || store.data.shopProfile?.commissionRate || 5.0;
+
+      const pNameEl = document.getElementById('prevShopName');
+      const pSubEl = document.getElementById('prevShopSub');
+      const pAddrEl = document.getElementById('prevShopAddr');
+      const pPhoneEl = document.getElementById('prevShopPhone');
+
+      if (pNameEl) pNameEl.textContent = name.toUpperCase();
+      if (pSubEl) pSubEl.textContent = sub;
+      if (pAddrEl) pAddrEl.textContent = addr;
+      if (pPhoneEl) pPhoneEl.textContent = phone ? `Ph: ${phone}` : '';
+
+      const pBillNoEl = document.getElementById('prevSampleBillNo');
+      const pBillDateEl = document.getElementById('prevSampleBillDate');
+      const pLocEl = document.getElementById('prevSampleLoc');
+      const pCommEl = document.getElementById('prevSampleComm');
+      const pItemEl = document.getElementById('prevSampleItem');
+      const pLineTotalEl = document.getElementById('prevSampleLineTotal');
+      const pFinalTotalEl = document.getElementById('prevSampleFinalTotal');
+
+      if (pBillNoEl) pBillNoEl.textContent = store.getNextBillNumber();
+      if (pBillDateEl) pBillDateEl.textContent = store.currentDate;
+      const currLoc = store.data.locations.find(l => l.id === store.currentLocationId);
+      if (pLocEl) pLocEl.textContent = currLoc ? currLoc.name : 'Main Yard';
+      if (pCommEl) pCommEl.textContent = `${comm}%`;
+
+      const sampleItem = (store.data.items && store.data.items[0]) || { name: 'Red Tomato (Hybrid)', defaultRate: 35.0, unit: 'kg' };
+      const sampleQty = 20;
+      const sampleTotal = sampleQty * (Number(sampleItem.defaultRate) || 35);
+      if (pItemEl) pItemEl.textContent = `${sampleItem.name} - ${sampleQty} ${sampleItem.unit || 'kg'} @ ₹${sampleItem.defaultRate}`;
+      if (pLineTotalEl) pLineTotalEl.textContent = formatCurrency(sampleTotal);
+      if (pFinalTotalEl) pFinalTotalEl.textContent = formatCurrency(sampleTotal);
+    }
+
+    // -------------------------------------------------------------
+    // EXPORT & BACKUP STATS CONTROLLER
+    // -------------------------------------------------------------
+    function renderExportStats() {
+      // 1. Customers
+      const custElem = document.getElementById('exportCustStat');
+      if (custElem) {
+        const totalDues = (store.data.customers || []).reduce((sum, c) => {
+          const bal = store.getCustomerBalanceBreakdown(c.id, store.currentDate);
+          return sum + (bal.totalOverdue || 0);
+        }, 0);
+        custElem.textContent = `${store.data.customers.length} parties enrolled • ${formatCurrency(totalDues)} outstanding dues`;
+      }
+
+      // 2. Items
+      const itemElem = document.getElementById('exportItemStat');
+      if (itemElem) {
+        itemElem.textContent = `${store.data.items.length} produce varieties in master catalog`;
+      }
+
+      // 3. Sales
+      const saleElem = document.getElementById('exportSaleStat');
+      if (saleElem) {
+        const totalSales = (store.data.sales || []).reduce((sum, s) => sum + (Number(s.finalAmount) || 0), 0);
+        saleElem.textContent = `${store.data.sales.length} bills recorded • ${formatCurrency(totalSales)} gross turnover`;
+      }
+
+      // 4. Payments
+      const payElem = document.getElementById('exportPaymentStat');
+      if (payElem) {
+        const totalPay = (store.data.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        payElem.textContent = `${store.data.payments.length} receipts • ${formatCurrency(totalPay)} total collections`;
+      }
+    }
+
+    function renderBackupStats() {
+      const el = document.getElementById('backupDataStats');
+      if (!el) return;
+      const locs = (store.data.locations || []).length;
+      const custs = (store.data.customers || []).length;
+      const items = (store.data.items || []).length;
+      const sales = (store.data.sales || []).length;
+      const pays = (store.data.payments || []).length;
+      const recycled = (store.data.recycleBin || []).length;
+      el.textContent = `Active snapshot: ${locs} stalls • ${custs} parties • ${items} items • ${sales} bills • ${pays} receipts • ${recycled} in recycle bin`;
+    }
+
+    function renderRecycleBin() {
+      const tbody = document.getElementById('recycleBinTableBody');
+      const emptyState = document.getElementById('recycleBinEmptyState');
+      const badge = document.getElementById('recycleBinBadge');
+      if (!tbody) return;
+
+      const items = store.getRecycleBin();
+      if (badge) {
+        badge.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
+        badge.className = items.length > 0 ? 'badge badge-warn' : 'badge';
+      }
+
+      if (items.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+      }
+
+      if (emptyState) emptyState.style.display = 'none';
+
+      tbody.innerHTML = items.map(item => {
+        const isSale = !!item.isSale;
+        const ref = item.billNo || item.id;
+        const party = item.customerName || 'Walk-in Cash';
+        const typeBadge = isSale
+          ? `<span class="badge" style="background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-size:0.68rem;">Bill</span>`
+          : `<span class="badge" style="background:rgba(16,185,129,0.12); color:#34d399; border:1px solid rgba(16,185,129,0.3); font-size:0.68rem;">Payment</span>`;
+
+        let summary = '';
+        if (isSale) {
+          summary = (item.items || []).map(i => `${i.itemName} (${i.weight} ${i.unit || 'kg'})`).join(', ');
+          if (item.notes) summary += (summary ? ' | ' : '') + item.notes;
+        } else {
+          summary = (item.method || 'CASH') + (item.notes ? ` - ${item.notes}` : '');
+        }
+        if (!summary) summary = '-';
+
+        const amount = isSale ? item.finalAmount : item.amount;
+        const origDate = item.date || '-';
+        let delDateStr = item.deletedAt ? new Date(item.deletedAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : (item.deletedDate || '-');
+
+        return `
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:0.55rem 0.75rem; font-family:var(--font-mono); font-weight:700;">${ref}</td>
+            <td style="padding:0.55rem 0.75rem;">${typeBadge}</td>
+            <td style="padding:0.55rem 0.75rem; font-weight:600;">${party}</td>
+            <td style="padding:0.55rem 0.75rem; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${summary}">${summary}</td>
+            <td style="padding:0.55rem 0.75rem; font-family:var(--font-mono); font-size:0.75rem;">${origDate}</td>
+            <td style="padding:0.55rem 0.75rem; font-size:0.73rem; color:var(--text-muted);">${delDateStr}</td>
+            <td style="padding:0.55rem 0.75rem; text-align:right; font-family:var(--font-mono); font-weight:700;">${formatCurrency(amount)}</td>
+            <td style="padding:0.55rem 0.75rem; text-align:center; white-space:nowrap;">
+              <button type="button" class="btn-primary" style="padding:3px 8px; font-size:0.7rem; margin-right:4px;" onclick="restoreRecycleItem('${item.id}')">Restore</button>
+              <button type="button" class="btn-ghost" style="padding:3px 6px; font-size:0.7rem; color:var(--color-danger); border:none;" onclick="purgeRecycleItem('${item.id}')" title="Permanently Delete">Purge</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function restoreRecycleItem(id) {
+      if (confirm('Restore this transaction record back to Daybook and customer ledger?')) {
+        const ok = store.restoreFromRecycleBin(id);
+        if (ok) {
+          renderRecycleBin();
+          alert('Transaction restored successfully!');
+        } else {
+          alert('Could not restore transaction.');
+        }
+      }
+    }
+    window.restoreRecycleItem = restoreRecycleItem;
+
+    function purgeRecycleItem(id) {
+      promptOwnerPin('Purge Record from Vault', () => {
+        if (confirm('Permanently purge this transaction record from the vault? This cannot be undone.')) {
+          store.permanentlyDeleteFromRecycleBin(id);
+          renderRecycleBin();
+        }
+      });
+    }
+    window.purgeRecycleItem = purgeRecycleItem;
+
+    // -------------------------------------------------------------
+    // LOCATIONS CONTROLLER
+    // -------------------------------------------------------------
+    function renderLocationsList() {
+      const list = document.getElementById('settingsLocList');
+      if (!list) return;
+
+      list.innerHTML = store.data.locations.map(loc => `
+        <li class="loc-row">
+          <div>
+            <strong>${loc.name}</strong>
+            <span class="text-dim" style="font-family:var(--font-mono); font-size:0.7rem; margin-left:6px;">${loc.code}</span>
+          </div>
+          <div>
+            ${store.data.locations.length > 1 ? `
+              <button class="btn-ghost" style="padding:1px 5px; font-size:0.7rem; color:var(--color-danger); border:none;" onclick="deleteLocation('${loc.id}')">✕</button>
+            ` : '<span class="text-dim" style="font-size:0.7rem;">Default</span>'}
+          </div>
+        </li>
+      `).join('');
+    }
+
+    function deleteLocation(locId) {
+      if (store.data.locations.length <= 1) {
+        alert('At least one location must remain!');
+        return;
+      }
+      if (confirm('Delete this location?')) {
+        store.data.locations = store.data.locations.filter(l => l.id !== locId);
+        if (store.currentLocationId === locId) {
+          store.setLocation(store.data.locations[0].id);
+        }
+        store.save(store.data);
+        renderLocationsList();
+        renderSharedHeader('settings');
+        updateSlipPreview();
+        renderBackupStats();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // CSV IMPORT LISTENERS
+    // -------------------------------------------------------------
+    function initCsvImportListeners() {
+      // Customer CSV Import
+      document.getElementById('importCustomerCsvInput')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('importCustomerStatus').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const res = importCustomersFromCsv(event.target.result);
+          if (res.success) {
+            alert(`Customer Import Complete!\nAdded: ${res.added} new parties\nUpdated: ${res.updated} existing parties\nTotal Rows Processed: ${res.total}`);
+            window.location.reload();
+          } else {
+            alert('Import failed: ' + res.message);
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // Produce CSV Import
+      document.getElementById('importItemCsvInput')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('importItemStatus').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const res = importItemsFromCsv(event.target.result);
+          if (res.success) {
+            alert(`Produce Rates Import Complete!\nAdded: ${res.added} new items\nUpdated: ${res.updated} existing rates\nTotal Rows Processed: ${res.total}`);
+            window.location.reload();
+          } else {
+            alert('Import failed: ' + res.message);
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // DYNAMIC SHOP CHECKLIST CONTROLLER
+    // -------------------------------------------------------------
+    let currentChecklistPhaseFilter = 'ALL';
+
+    function initDynamicChecklist() {
+      renderChecklist();
+
+      document.getElementById('addChecklistTaskForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('newTaskTextInput');
+        const phaseSelect = document.getElementById('newTaskPhaseSelect');
+        const text = input.value.trim();
+        const phase = phaseSelect.value;
+        if (!text) return;
+        addChecklistItem(text, phase);
+        input.value = '';
+        renderChecklist();
+      });
+
+      document.getElementById('btnResetChecklistToday')?.addEventListener('click', () => {
+        if (confirm('Reset all checkboxes for a new day? All tasks will become unchecked.')) {
+          resetDailyChecklist();
+          renderChecklist();
+        }
+      });
+
+      document.getElementById('btnRestoreDefaultChecklist')?.addEventListener('click', () => {
+        if (confirm('Restore standard Mandi SOP checklist? This will reset all tasks to the standard list.')) {
+          restoreDefaultChecklist();
+          renderChecklist();
+        }
+      });
+    }
+
+    function filterChecklist(phase, btn) {
+      currentChecklistPhaseFilter = phase;
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderChecklist();
+    }
+
+    function renderChecklist() {
+      const list = getDynamicChecklist();
+      const container = document.getElementById('checklistItemsContainer');
+      if (!container) return;
+
+      const completedCount = list.filter(i => i.done).length;
+      const totalCount = list.length;
+      const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+      document.getElementById('checklistProgressText').textContent = 
+        `${completedCount} of ${totalCount} tasks completed (${pct}%)`;
+      document.getElementById('checklistProgressBarFill').style.width = `${pct}%`;
+
+      const filtered = currentChecklistPhaseFilter === 'ALL' 
+        ? list 
+        : list.filter(i => i.phase === currentChecklistPhaseFilter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-dim); font-size:0.8rem;">No tasks found in this section. Add one below!</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => `
+        <div class="checklist-item ${item.done ? 'done' : ''}">
+          <div class="checklist-left" onclick="handleToggleChecklist('${item.id}', ${!item.done})">
+            <input type="checkbox" class="checklist-checkbox" ${item.done ? 'checked' : ''} onclick="event.stopPropagation(); handleToggleChecklist('${item.id}', this.checked)">
+            <span class="checklist-text">${item.text}</span>
+            <span class="checklist-phase-badge">${item.phase}</span>
+          </div>
+          <button type="button" class="btn-delete-task" title="Delete task" onclick="handleDeleteChecklist('${item.id}')">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function handleToggleChecklist(id, done) {
+      toggleChecklistItem(id, done);
+      renderChecklist();
+    }
+
+    function handleDeleteChecklist(id) {
+      if (confirm('Remove this task from your checklist?')) {
+        deleteChecklistItem(id);
+        renderChecklist();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // GOOGLE SHEETS & CLOUD SYNC CONTROLLER
+    // -------------------------------------------------------------
+    function initCloudSyncTab() {
+      const cfg = getCloudConfig();
+      const urlInput = document.getElementById('cloudScriptUrlInput');
+      const yearInput = document.getElementById('cloudActiveYearInput');
+      const sheetNameInput = document.getElementById('cloudSpreadsheetNameInput');
+      const autoSyncCheck = document.getElementById('cloudAutoSyncCheckbox');
+      const targetYearInput = document.getElementById('rolloverTargetYearInput');
+      const targetSheetCode = document.getElementById('rolloverTargetSheetCode');
+
+      if (urlInput) urlInput.value = cfg.scriptUrl || '';
+      if (yearInput) yearInput.value = cfg.activeYear || '2026_27';
+      if (sheetNameInput) sheetNameInput.value = cfg.activeSpreadsheetName || `Mandi_Ledger_${cfg.activeYear || '2026_27'}`;
+      if (autoSyncCheck) autoSyncCheck.checked = cfg.autoSync !== false;
+
+      // Compute dynamic next fiscal year for rollover
+      if (targetYearInput) {
+        const yrParts = (cfg.activeYear || '2026_27').split('_');
+        if (yrParts.length === 2 && !isNaN(parseInt(yrParts[0], 10))) {
+          const y1 = parseInt(yrParts[0], 10) + 1;
+          const y2 = parseInt(yrParts[1], 10) + 1;
+          targetYearInput.value = `${y1}_${String(y2).padStart(2, '0')}`;
+        } else {
+          targetYearInput.value = '2027_28';
+        }
+      }
+      if (targetSheetCode && targetYearInput) {
+        targetSheetCode.textContent = `Mandi_Ledger_${targetYearInput.value}`;
+      }
+
+      yearInput?.addEventListener('input', () => {
+        const yr = yearInput.value.trim() || '2026_27';
+        if (sheetNameInput) sheetNameInput.value = `Mandi_Ledger_${yr}`;
+      });
+
+      targetYearInput?.addEventListener('input', () => {
+        const tgt = targetYearInput.value.trim() || '2027_28';
+        if (targetSheetCode) targetSheetCode.textContent = `Mandi_Ledger_${tgt}`;
+      });
+
+      updateCloudStatusBadge(cfg);
+      renderCapacityMeter(cfg.stats);
+      renderRolloverPreview();
+      renderArchivedYearsList();
+      renderSettingsSyncQueue();
+
+      // Form Submit: Save & Test Connection
+      document.getElementById('cloudConfigForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const url = (urlInput.value || '').trim();
+        const yr = (yearInput.value || '').trim() || '2026_27';
+        
+        cfg.scriptUrl = url;
+        cfg.activeYear = yr;
+        cfg.activeSpreadsheetName = `Mandi_Ledger_${yr}`;
+        cfg.autoSync = autoSyncCheck.checked;
+        saveCloudConfig(cfg);
+
+        const badgeText = document.getElementById('cloudStatusText');
+        if (badgeText) badgeText.textContent = 'Testing...';
+
+        if (!url) {
+          updateCloudStatusBadge(cfg);
+          alert('Settings saved. Cloud sync is currently disabled (No URL provided).');
+          return;
+        }
+
+        const res = await testGoogleSheetsConnection(url);
+        if (res.success) {
+          updateCloudStatusBadge(getCloudConfig());
+          renderCapacityMeter(getCloudConfig().stats);
+          alert('Connected to Google Sheets successfully!\nActive Sheet: ' + (res.data?.spreadsheetName || cfg.activeSpreadsheetName));
+        } else {
+          updateCloudStatusBadge(getCloudConfig(), false);
+          alert('Connection test failed:\n' + res.message);
+        }
+      });
+
+      // Refresh Capacity
+      document.getElementById('btnRefreshCapacity')?.addEventListener('click', async () => {
+        const stats = await fetchGoogleSheetsCapacity();
+        renderCapacityMeter(stats);
+      });
+
+      // Sync Master Catalog Now
+      document.getElementById('btnSyncAllMasterData')?.addEventListener('click', async () => {
+        const url = getCloudConfig().scriptUrl;
+        if (!url) {
+          alert('Please enter and save your Google Apps Script Web App URL first.');
+          return;
+        }
+        try {
+          const btn = document.getElementById('btnSyncAllMasterData');
+          btn.textContent = 'Syncing...';
+          btn.disabled = true;
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'BULK_SYNC_ALL',
+              customers: store.data.customers,
+              items: store.data.items,
+              shopProfile: store.data.shopProfile,
+              locations: store.data.locations
+            })
+          });
+          const data = await res.json();
+          btn.textContent = 'Sync Master Catalog Now';
+          btn.disabled = false;
+
+          if (data.status === 'success') {
+            alert('Customers, Produce Rates, and Shop Stalls successfully synced to Google Sheets!');
+            if (data.stats) renderCapacityMeter(data.stats);
+          } else {
+            alert('Sync failed: ' + (data.message || 'Unknown error'));
+          }
+        } catch (err) {
+          alert('Network error syncing data: ' + err.message);
+          const btn = document.getElementById('btnSyncAllMasterData');
+          if (btn) {
+            btn.textContent = 'Sync Master Catalog Now';
+            btn.disabled = false;
+          }
+        }
+      });
+
+      // Flush Cloud Sync Queue
+      document.getElementById('btnFlushSettingsQueue')?.addEventListener('click', async () => {
+        if (!navigator.onLine) {
+          alert('Device is currently offline. Connect to internet to sync queue.');
+          return;
+        }
+        const btn = document.getElementById('btnFlushSettingsQueue');
+        if (btn) btn.textContent = 'Syncing...';
+        await flushSyncQueue();
+        if (btn) btn.textContent = 'Flush & Sync Now';
+        renderSettingsSyncQueue();
+        alert('Cloud sync queue flushed. All pending records sent to Google Sheets.');
+      });
+
+      // Execute Annual Rollover
+      document.getElementById('btnExecuteRollover')?.addEventListener('click', () => {
+        const targetYear = document.getElementById('rolloverTargetYearInput')?.value.trim() || '2027_28';
+        const preview = getRolloverPreviewData();
+
+        promptOwnerPin('Execute Annual Rollover & Carry Forward Dues', async () => {
+          const confirmMsg = `Are you sure you want to close financial year '${cfg.activeYear || '2026_27'}' and start '${targetYear}'?\n\n` +
+            `• Total Customers to Migrate: ${preview.totalParties} parties\n` +
+            `• Parties with Dues: ${preview.partiesWithDues} parties\n` +
+            `• Total Outstanding Balance Carried Forward: ${formatCurrency(preview.totalOutstandingDues)}\n\n` +
+            `• A new Google Sheet 'Mandi_Ledger_${targetYear}' will be created.\n` +
+            `• All customer net dues will become their new Opening Balance.\n` +
+            `• Previous sales transactions will be archived safely.\n\n` +
+            `Proceed with Rollover?`;
+
+          if (!confirm(confirmMsg)) return;
+
+          const btn = document.getElementById('btnExecuteRollover');
+          btn.textContent = 'Creating New Spreadsheet & Migrating Balances...';
+          btn.disabled = true;
+
+          const res = await executeAnnualRollover(targetYear);
+          btn.textContent = 'Execute Annual Rollover & Carry Forward Dues';
+          btn.disabled = false;
+
+          if (res.success) {
+            let successMsg = `Financial Year Rollover Complete!\n\n` +
+              `Active Year: ${targetYear}\n` +
+              `Customers Migrated: ${res.migratedCount}\n` +
+              `Total Carried Forward Dues: ${formatCurrency(res.totalDues)}\n`;
+            if (res.newSpreadsheetUrl) {
+              successMsg += `\nNew Google Sheet File Created:\n${res.newSpreadsheetUrl}`;
+            }
+            alert(successMsg);
+            window.location.reload();
+          } else {
+            alert('Rollover failed: ' + res.message);
+          }
+        });
+      });
+
+      // Copy setup instructions
+      document.getElementById('btnCopySetupInfo')?.addEventListener('click', () => {
+        const text = `Google Apps Script Backend Setup Instructions:\n` +
+          `1. Open Google Sheets (https://sheets.new)\n` +
+          `2. Go to Extensions -> Apps Script\n` +
+          `3. Copy all code from 'google_sheets_sync.js' (inside your Mandi folder) and paste into the editor\n` +
+          `4. Click Deploy -> New deployment -> Web app\n` +
+          `5. Set Execute as: 'Me' and Who has access: 'Anyone'\n` +
+          `6. Deploy and copy the Web App URL\n` +
+          `7. Paste the Web App URL in Mandi Settings -> Google Sheets & Cloud Sync tab`;
+        navigator.clipboard.writeText(text).then(() => {
+          alert('Setup instructions copied to clipboard! The backend script is saved at google_sheets_sync.js in your project.');
+        }).catch(() => {
+          alert('Code instructions in google_sheets_sync.js file in your project directory.');
+        });
+      });
+    }
+
+    function updateCloudStatusBadge(cfg, isSuccess = null) {
+      const badge = document.getElementById('cloudStatusBadge');
+      const text = document.getElementById('cloudStatusText');
+      if (!badge || !text) return;
+
+      badge.className = 'cloud-status-badge';
+      if (!cfg.scriptUrl) {
+        badge.classList.add('disconnected');
+        text.textContent = 'Offline / Local Only';
+      } else if (isSuccess === false) {
+        badge.classList.add('warning');
+        text.textContent = 'Connection Error';
+      } else {
+        badge.classList.add('connected');
+        text.textContent = 'Connected & Synced';
+      }
+    }
+
+    function renderCapacityMeter(stats) {
+      if (!stats) stats = fetchGoogleSheetsCapacity();
+      const used = stats.salesRowsUsed || 0;
+      const limit = stats.salesRowsLimit || 50000;
+      const remaining = stats.rowsRemaining !== undefined ? stats.rowsRemaining : Math.max(0, limit - used);
+      const pct = stats.percentUsed !== undefined ? stats.percentUsed : Math.min(100, Math.round((used / limit) * 100));
+
+      const usageText = document.getElementById('capacityUsageText');
+      const fill = document.getElementById('capacityProgressFill');
+      const remText = document.getElementById('capacityRemainingText');
+      const callout = document.getElementById('capacityWarningCallout');
+
+      if (usageText) usageText.textContent = `${used.toLocaleString()} / ${limit.toLocaleString()} rows (${pct}%)`;
+      if (remText) remText.textContent = `${remaining.toLocaleString()} rows remaining`;
+
+      if (fill) {
+        fill.style.width = `${pct}%`;
+        fill.className = 'capacity-progress-fill';
+        if (remaining <= 2500) {
+          fill.classList.add('danger');
+        } else if (remaining <= 5000) {
+          fill.classList.add('warning');
+        }
+      }
+
+      if (callout) {
+        if (remaining <= 5000) {
+          callout.classList.remove('hidden');
+        } else {
+          callout.classList.add('hidden');
+        }
+      }
+    }
+
+    function renderRolloverPreview() {
+      const preview = getRolloverPreviewData();
+      const custElem = document.getElementById('rolloverCustCount');
+      const duesElem = document.getElementById('rolloverDuesCount');
+      const totalElem = document.getElementById('rolloverTotalDues');
+
+      if (custElem) custElem.textContent = preview.totalParties;
+      if (duesElem) duesElem.textContent = preview.partiesWithDues;
+      if (totalElem) totalElem.textContent = formatCurrency(preview.totalOutstandingDues);
+    }
+
+    function renderArchivedYearsList() {
+      const container = document.getElementById('archivedYearsContainer');
+      const badge = document.getElementById('archivedYearsBadge');
+      if (!container) return;
+
+      const years = store.getArchivedYears();
+      if (badge) {
+        badge.textContent = `${years.length} Closed Year${years.length === 1 ? '' : 's'}`;
+        badge.className = years.length > 0 ? 'badge badge-success' : 'badge';
+      }
+
+      if (years.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:1.25rem; color:var(--text-dim); font-size:0.78rem; background:var(--bg-subtle); border-radius:var(--radius-xs);">
+            No previous financial years archived yet. When you execute an annual rollover, the closed year will be preserved here automatically.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = years.map(y => `
+        <div class="archive-item-card">
+          <div class="archive-item-header">
+            <div>
+              <strong style="font-size:0.88rem;">${y.yearLabel || ('FY ' + y.yearId.replace('_', '-'))}</strong>
+              <span class="text-dim" style="font-size:0.72rem; margin-left:6px;">Closed: ${y.closedDate || '--'}</span>
+            </div>
+            <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+              <a href="daybook.html?fy=${y.yearId}" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem; text-decoration:none;" title="Browse this year in Daybook audit mode">View in Daybook</a>
+              <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem;" onclick="exportArchivedYearCsv('${y.yearId}')" title="Download Excel CSV">Export CSV</button>
+              ${y.spreadsheetUrl ? `
+                <a href="${y.spreadsheetUrl}" target="_blank" rel="noopener" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem; text-decoration:none; color:var(--brand-accent);" title="Open Google Spreadsheet in Drive">Google Sheet</a>
+              ` : ''}
+            </div>
+          </div>
+          <div class="archive-metrics-grid">
+            <div class="archive-metric-box">
+              <span class="archive-metric-label">Bills Issued</span>
+              <span class="archive-metric-val">${y.salesCount || (y.sales ? y.sales.length : 0)}</span>
+            </div>
+            <div class="archive-metric-box">
+              <span class="archive-metric-label">Gross Turnover</span>
+              <span class="archive-metric-val text-accent">${formatCurrency(y.salesTurnover || 0)}</span>
+            </div>
+            <div class="archive-metric-box">
+              <span class="archive-metric-label">Collections</span>
+              <span class="archive-metric-val text-success">${formatCurrency(y.paymentsCollected || 0)}</span>
+            </div>
+            <div class="archive-metric-box">
+              <span class="archive-metric-label">Carried Dues</span>
+              <span class="archive-metric-val text-warning">${formatCurrency(y.carriedDues || 0)}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderSettingsSyncQueue() {
+      const queueCount = (store.data.syncQueue || []).length;
+      const badge = document.getElementById('settingsSyncBadge');
+      const status = document.getElementById('settingsSyncQueueStatus');
+      if (badge) {
+        badge.textContent = `${queueCount} Queued`;
+        badge.className = queueCount > 0 ? 'badge badge-warning' : 'badge badge-success';
+      }
+      if (status) {
+        status.textContent = queueCount > 0 ? `${queueCount} entries waiting for cloud upload` : 'All records synchronized';
+      }
+    }
+
+    function initSecurityPinSettings() {
+      renderSettingsPinStatus();
+
+      document.getElementById('settingsChangePinForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const currentPin = document.getElementById('inputCurrentPin').value.trim();
+        const newPin = document.getElementById('inputNewPin').value.trim();
+
+        if (currentPin !== store.getOwnerPin()) {
+          alert('Current PIN is incorrect. (Default is 1234)');
+          return;
+        }
+        if (!/^\d{4}$/.test(newPin)) {
+          alert('New PIN must be exactly 4 numeric digits (0-9).');
+          return;
+        }
+
+        store.setOwnerPin(newPin);
+        document.getElementById('inputCurrentPin').value = '';
+        document.getElementById('inputNewPin').value = '';
+        renderSettingsPinStatus();
+        alert('Owner PIN updated successfully! Your new PIN is active.');
+      });
+
+      document.getElementById('btnToggleSettingsSessionLock')?.addEventListener('click', () => {
+        toggleOwnerLock();
+        renderSettingsPinStatus();
+      });
+    }
+
+    function renderSettingsPinStatus() {
+      const isUnlocked = store.isOwnerUnlocked();
+      const badge = document.getElementById('settingsPinStatusBadge');
+      const text = document.getElementById('settingsSessionStateText');
+      const btn = document.getElementById('btnToggleSettingsSessionLock');
+
+      if (badge) {
+        badge.textContent = isUnlocked ? 'Owner Mode (Unlocked)' : 'Cashier Mode (Locked)';
+        badge.className = isUnlocked ? 'badge badge-success' : 'badge';
+      }
+      if (text) {
+        text.textContent = isUnlocked ? 'Unlocked (Owner active)' : 'Locked (Cashier mode)';
+        text.className = isUnlocked ? 'text-success font-bold' : 'text-dim';
+      }
+      if (btn) {
+        btn.textContent = isUnlocked ? 'Lock Session' : 'Unlock Owner Mode';
+      }
+    }
+  </script>
+</body>
+</html>

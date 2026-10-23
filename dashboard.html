@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen — Dashboard & Financial Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Shared Header (Rendered dynamically by store.js) -->
+  <header id="sharedHeader" class="app-header"></header>
+
+  <main class="page-container">
+    
+    <div class="page-header">
+      <div>
+        <h2 class="page-title" data-i18n="dashboard_title">Executive Business Dashboard</h2>
+        <span class="text-dim" style="font-size:0.75rem;" id="dashPeriodSub">Analytics period</span>
+      </div>
+      <div class="page-toolbar">
+        <select id="dashboardLocSelect" class="header-select" title="Filter by Market Stall / Location">
+          <option value="ALL">All Stalls / Counters (Combined)</option>
+        </select>
+        <select id="dashboardPeriodSelect" class="header-select" title="Select Analytics Window">
+          <option value="1D">Today (1 Day)</option>
+          <option value="7D">Last 7 Days (1 Week)</option>
+          <option value="30D" selected>Last 30 Days (1 Month)</option>
+          <option value="6M">Last 6 Months</option>
+          <option value="ALL">All Time</option>
+        </select>
+        <button type="button" class="btn-ghost" onclick="window.print()">Print Report</button>
+      </div>
+    </div>
+
+    <!-- 1. Executive Metric Summary Cards -->
+    <div class="summary-strip">
+      <div class="strip-card">
+        <span class="strip-label">Outstanding Debt (बाकी उधारी)</span>
+        <div class="strip-val text-danger" id="kpiTotalDebt">₹0.00</div>
+        <small class="text-dim" id="kpiDebtorsCount">0 active debtors</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Advance Deposits (कुल जमा राशि)</span>
+        <div class="strip-val text-success" id="kpiAdvanceDeposits">₹0.00</div>
+        <small class="text-dim" id="kpiAdvanceCount">0 parties with advance credit</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Sales Turnover (कुल बिक्री)</span>
+        <div class="strip-val" id="kpiTurnover">₹0.00</div>
+        <small class="text-dim" id="kpiBillsCount">0 bills issued</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Gross Profit (सकल मुनाफा)</span>
+        <div class="strip-val text-success" id="kpiGrossProfit">₹0.00</div>
+        <small class="text-dim" id="kpiGrossMargin">0% margin on sales</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Net Profit (शुद्ध लाभ)</span>
+        <div class="strip-val text-success" id="kpiNetProfit">₹0.00</div>
+        <small class="text-dim" id="kpiWastageLossSub">After ₹0.00 spoilage loss</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Stock Valuation (स्टॉक मूल्य)</span>
+        <div class="strip-val font-mono" id="kpiStockValuation">₹0.00</div>
+        <small class="text-dim" id="kpiStockAlertsSub">0 low stock alerts</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Total Cash Inflow (नकद आवक)</span>
+        <div class="strip-val text-success" id="kpiCashCollected">₹0.00</div>
+        <small class="text-dim" id="kpiCashBreakdown">Spot cash + repayments</small>
+      </div>
+      <div class="strip-card">
+        <span class="strip-label">Credit Issued (उधार बिक्री)</span>
+        <div class="strip-val text-warning" id="kpiCreditIssued">₹0.00</div>
+        <small class="text-dim" id="kpiCreditRatio">0% of total turnover</small>
+      </div>
+    </div>
+
+    <!-- 2. Debt Aging & Risk Monitor -->
+    <div class="dashboard-card" style="margin-bottom:1.25rem;">
+      <div class="card-heading">
+        <span>Market Credit Aging Breakdown (उधारी आयु विश्लेषण)</span>
+        <span class="font-mono text-muted" style="font-size:0.75rem;" id="agingTotalBadge">Total Active: ₹0.00</span>
+      </div>
+      <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.75rem;">
+        Monitors overdue risk by categorizing all active market balances into age brackets based on transaction history.
+      </p>
+      
+      <div class="aging-bar-container" id="agingBarContainer">
+        <div id="agingBarFresh" class="aging-segment fresh" style="width:0%;" title="0-7 Days"></div>
+        <div id="agingBarMedium" class="aging-segment medium" style="width:0%;" title="8-30 Days"></div>
+        <div id="agingBarHigh" class="aging-segment high" style="width:0%;" title="31+ Days"></div>
+      </div>
+
+      <div class="aging-legend">
+        <div class="aging-legend-item">
+          <span class="aging-dot fresh"></span>
+          <div>
+            <strong>0 to 7 Days (Fresh):</strong>
+            <span id="agingFreshVal" class="font-mono text-success" style="font-weight:700;">₹0.00</span>
+            <span class="text-dim">(<span id="agingFreshCount">0</span> parties, <span id="agingFreshPct">0%</span>)</span>
+          </div>
+        </div>
+        <div class="aging-legend-item">
+          <span class="aging-dot medium"></span>
+          <div>
+            <strong>8 to 30 Days (Attention):</strong>
+            <span id="agingMediumVal" class="font-mono text-warning" style="font-weight:700;">₹0.00</span>
+            <span class="text-dim">(<span id="agingMediumCount">0</span> parties, <span id="agingMediumPct">0%</span>)</span>
+          </div>
+        </div>
+        <div class="aging-legend-item">
+          <span class="aging-dot high"></span>
+          <div>
+            <strong>31+ Days (High Risk):</strong>
+            <span id="agingHighVal" class="font-mono text-danger" style="font-weight:700;">₹0.00</span>
+            <span class="text-dim">(<span id="agingHighCount">0</span> parties, <span id="agingHighPct">0%</span>)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Analytical Grids: Top Debtors & Top Produce -->
+    <div class="dashboard-grid-2">
+      
+      <!-- Top Debtors Card -->
+      <div class="dashboard-card">
+        <div class="card-heading">
+          <span id="topDebtorsTitle">Top Debtors (Highest Outstanding)</span>
+          <a href="customers.html" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem;">Customer Ledger</a>
+        </div>
+        <div class="table-card" style="border:none; box-shadow:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer / Party</th>
+                <th>Location</th>
+                <th>Contact & Activity</th>
+                <th style="text-align:right;">Pending Due</th>
+                <th style="text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="topDebtorsBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top Produce Items Card -->
+      <div class="dashboard-card">
+        <div class="card-heading">
+          <span>Top Produce Items (By Sales Revenue)</span>
+          <a href="items.html" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem;">Rates Master</a>
+        </div>
+        <div class="table-card" style="border:none; box-shadow:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Produce Item</th>
+                <th style="text-align:right;">Volume Sold</th>
+                <th style="text-align:right;">Avg Rate</th>
+                <th style="text-align:right;">Revenue</th>
+                <th style="text-align:right;">Share</th>
+              </tr>
+            </thead>
+            <tbody id="topProduceBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. Top Buyers by Volume -->
+    <div class="dashboard-card" style="margin-bottom:1.25rem;">
+      <div class="card-heading">
+        <span>Top Buyers by Purchase Volume</span>
+      </div>
+      <div class="table-card" style="border:none; box-shadow:none;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Buyer / Party Name</th>
+              <th>Khata Status</th>
+              <th style="text-align:center;">Bills Count</th>
+              <th style="text-align:right;">Total Purchases</th>
+              <th style="text-align:right;">Average Bill Size</th>
+            </tr>
+          </thead>
+          <tbody id="topBuyersBody">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. Produce Profitability & Margin Leaderboard -->
+    <div class="dashboard-card">
+      <div class="card-heading">
+        <span>Produce Profitability &amp; Margin Leaderboard (मुनाफा विश्लेषण)</span>
+        <a href="inventory.html" class="btn-ghost" style="padding:2px 8px; font-size:0.72rem;">Live Stock &amp; Wastage Register</a>
+      </div>
+      <div class="table-card" style="border:none; box-shadow:none;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Produce Commodity</th>
+              <th style="text-align:right;">Volume Sold</th>
+              <th style="text-align:right;">Sales Revenue</th>
+              <th style="text-align:right;">Cost of Goods</th>
+              <th style="text-align:right;">Gross Profit</th>
+              <th style="text-align:right;">Profit Margin (%)</th>
+            </tr>
+          </thead>
+          <tbody id="topProfitBody">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Mobile Bottom Nav (Rendered dynamically by store.js) -->
+  <nav id="sharedMobileNav" class="mobile-bottom-nav"></nav>
+
+  <script src="store.js?v=2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initSharedUI('dashboard');
+      initDashboardLocationFilter();
+      renderDashboard();
+
+      document.getElementById('dashboardPeriodSelect')?.addEventListener('change', renderDashboard);
+      document.getElementById('dashboardLocSelect')?.addEventListener('change', renderDashboard);
+
+      // Real-time multi-tab & transaction event listeners
+      window.addEventListener('mandi:payment-saved', renderDashboard);
+      window.addEventListener('mandi:sale-saved', renderDashboard);
+      window.addEventListener('mandi:customer-saved', renderDashboard);
+      window.addEventListener('mandi:storage-sync', renderDashboard);
+      window.addEventListener('inventory-updated', renderDashboard);
+    });
+
+    function initDashboardLocationFilter() {
+      const locSelect = document.getElementById('dashboardLocSelect');
+      if (!locSelect || !store?.data?.locations) return;
+
+      const currentVal = locSelect.value || 'ALL';
+      locSelect.innerHTML = `
+        <option value="ALL">All Stalls / Counters (Combined)</option>
+        ${store.data.locations.map(l => `
+          <option value="${l.id}">${l.name} [${l.code || 'LOC'}]</option>
+        `).join('')}
+      `;
+      locSelect.value = currentVal;
+    }
+
+    function renderDashboard() {
+      const period = document.getElementById('dashboardPeriodSelect')?.value || '30D';
+      const locId = document.getElementById('dashboardLocSelect')?.value || 'ALL';
+      const data = store.getDashboardAnalytics(period, locId, store.currentDate);
+
+      // Subtitle & Scope
+      const selectedLoc = locId === 'ALL' ? 'All Stalls (Combined)' : (store.data.locations.find(l => l.id === locId)?.name || 'Selected Stall');
+      document.getElementById('dashPeriodSub').textContent = 
+        `Window: ${data.startDate} to ${data.endDate} | Scope: ${selectedLoc} | ${data.salesCount} bills issued`;
+
+      // 1. KPI Cards
+      document.getElementById('kpiTotalDebt').textContent = formatCurrency(data.grandTotalOverdue);
+      document.getElementById('kpiDebtorsCount').textContent = 
+        `${data.debtorsCount} of ${data.totalCustomersCount} parties currently owe money`;
+
+      const kpiAdvEl = document.getElementById('kpiAdvanceDeposits');
+      if (kpiAdvEl) kpiAdvEl.textContent = formatCurrency(data.grandTotalAdvance || 0);
+      const kpiAdvCountEl = document.getElementById('kpiAdvanceCount');
+      if (kpiAdvCountEl) {
+        kpiAdvCountEl.textContent = `${data.advanceCount || 0} parties with credit deposit`;
+      }
+
+      document.getElementById('kpiTurnover').textContent = formatCurrency(data.grossTurnover);
+      document.getElementById('kpiBillsCount').textContent = 
+        `${data.salesCount} bills (Spot: ${formatCurrency(data.spotCashSales)} | Credit: ${formatCurrency(data.creditSales)})`;
+
+      const kpiGrossProfit = document.getElementById('kpiGrossProfit');
+      if (kpiGrossProfit) kpiGrossProfit.textContent = formatCurrency(data.grossProfit);
+      const kpiGrossMargin = document.getElementById('kpiGrossMargin');
+      if (kpiGrossMargin) kpiGrossMargin.textContent = `${data.profitMargin.toFixed(1)}% margin on sales`;
+
+      const kpiNetProfit = document.getElementById('kpiNetProfit');
+      if (kpiNetProfit) {
+        kpiNetProfit.textContent = formatCurrency(data.netProfit);
+        kpiNetProfit.className = data.netProfit >= 0 ? 'strip-val text-success' : 'strip-val text-danger';
+      }
+      const kpiWastageLossSub = document.getElementById('kpiWastageLossSub');
+      if (kpiWastageLossSub) {
+        kpiWastageLossSub.textContent = `After ${formatCurrency(data.totalWastageLoss)} spoilage loss`;
+      }
+
+      const kpiStockValuation = document.getElementById('kpiStockValuation');
+      if (kpiStockValuation) kpiStockValuation.textContent = formatCurrency(data.totalStockValue);
+      const kpiStockAlertsSub = document.getElementById('kpiStockAlertsSub');
+      if (kpiStockAlertsSub) {
+        kpiStockAlertsSub.textContent = `${data.lowStockCount + data.outOfStockCount} low/out of stock alerts`;
+      }
+
+      document.getElementById('kpiCashCollected').textContent = formatCurrency(data.totalCashCollected);
+      const cashInflowSub = `Cash: ${formatCurrency(data.spotCashSales + (data.cashRepayments || 0))} | UPI/Online: ${formatCurrency(data.onlineRepayments || 0)}`;
+      document.getElementById('kpiCashBreakdown').textContent = cashInflowSub;
+
+      document.getElementById('kpiCreditIssued').textContent = formatCurrency(data.creditSales);
+      const creditRatio = data.grossTurnover > 0 ? ((data.creditSales / data.grossTurnover) * 100).toFixed(1) : 0;
+      document.getElementById('kpiCreditRatio').textContent = `${creditRatio}% of total period turnover`;
+
+      // 2. Debt Aging
+      const aging = data.aging;
+      const totalBadge = document.getElementById('agingTotalBadge');
+      if (aging.grandTotal === 0) {
+        totalBadge.textContent = 'All Accounts Clear (₹0.00 Overdue)';
+        totalBadge.className = 'font-mono text-success';
+      } else {
+        totalBadge.textContent = `Total Active: ${formatCurrency(aging.grandTotal)}`;
+        totalBadge.className = 'font-mono text-muted';
+      }
+
+      const barFresh = document.getElementById('agingBarFresh');
+      const barMedium = document.getElementById('agingBarMedium');
+      const barHigh = document.getElementById('agingBarHigh');
+
+      barFresh.style.width = `${aging.bracket0to7.percent}%`;
+      barFresh.title = `0-7 Days (Fresh): ${formatCurrency(aging.bracket0to7.amount)} (${aging.bracket0to7.percent.toFixed(0)}%)`;
+
+      barMedium.style.width = `${aging.bracket8to30.percent}%`;
+      barMedium.title = `8-30 Days (Attention): ${formatCurrency(aging.bracket8to30.amount)} (${aging.bracket8to30.percent.toFixed(0)}%)`;
+
+      barHigh.style.width = `${aging.bracket31Plus.percent}%`;
+      barHigh.title = `31+ Days (High Risk): ${formatCurrency(aging.bracket31Plus.amount)} (${aging.bracket31Plus.percent.toFixed(0)}%)`;
+
+      document.getElementById('agingFreshVal').textContent = formatCurrency(aging.bracket0to7.amount);
+      document.getElementById('agingFreshCount').textContent = aging.bracket0to7.count;
+      document.getElementById('agingFreshPct').textContent = `${aging.bracket0to7.percent.toFixed(0)}%`;
+
+      document.getElementById('agingMediumVal').textContent = formatCurrency(aging.bracket8to30.amount);
+      document.getElementById('agingMediumCount').textContent = aging.bracket8to30.count;
+      document.getElementById('agingMediumPct').textContent = `${aging.bracket8to30.percent.toFixed(0)}%`;
+
+      document.getElementById('agingHighVal').textContent = formatCurrency(aging.bracket31Plus.amount);
+      document.getElementById('agingHighCount').textContent = aging.bracket31Plus.count;
+      document.getElementById('agingHighPct').textContent = `${aging.bracket31Plus.percent.toFixed(0)}%`;
+
+      // 3. Top Debtors Table
+      const topDebtorsTitle = document.getElementById('topDebtorsTitle');
+      if (topDebtorsTitle) {
+        topDebtorsTitle.textContent = `Top Debtors (Showing ${data.topDebtors.length} of ${data.debtorsCount})`;
+      }
+      const topDebtorsBody = document.getElementById('topDebtorsBody');
+      if (data.topDebtors.length === 0) {
+        topDebtorsBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-dim);">No active debtors! All accounts clear.</td></tr>`;
+      } else {
+        topDebtorsBody.innerHTML = data.topDebtors.map(d => {
+          const loc = store.data.locations.find(l => l.id === d.locationId);
+          const locTag = loc ? `<span class="badge" style="font-size:0.68rem;">${loc.code || loc.name}</span>` : '<span class="text-dim">--</span>';
+          const lastPaidStr = d.lastPaymentDate && d.lastPaymentDate !== 'None' ? `Last paid: ${d.lastPaymentDate}` : 'No payments on record';
+          return `
+            <tr>
+              <td>
+                <a href="customers.html?search=${encodeURIComponent(d.name)}" class="font-bold text-main" style="text-decoration:none;" title="Click to view Customer Statement">
+                  ${d.name}
+                </a>
+              </td>
+              <td>${locTag}</td>
+              <td>
+                <span class="font-mono text-muted" style="font-size:0.75rem;">${d.phone || 'No phone'}</span><br>
+                <span class="text-dim" style="font-size:0.68rem;">${lastPaidStr}</span>
+              </td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:700; color:var(--color-danger);">
+                ${formatCurrency(d.totalOverdue)}
+              </td>
+              <td style="text-align:center;">
+                <button class="btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="openGlobalRepaymentModal('${d.id}')">Settle</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 4. Top Produce Table
+      const topProduceBody = document.getElementById('topProduceBody');
+      if (data.topProduce.length === 0) {
+        topProduceBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-dim);">No produce sales recorded in this period</td></tr>`;
+      } else {
+        topProduceBody.innerHTML = data.topProduce.map(p => {
+          const share = data.grossTurnover > 0 ? ((p.revenue / data.grossTurnover) * 100).toFixed(1) : 0;
+          const w = Number(p.weight) || 0;
+          const formattedWeight = (w % 1 === 0 ? w : w.toFixed(2));
+          const avgRate = w > 0 ? (p.revenue / w).toFixed(2) : 0;
+          return `
+            <tr>
+              <td><strong>${p.name}</strong></td>
+              <td style="text-align:right; font-family:var(--font-mono);">${formattedWeight} ${p.unit || 'kg'}</td>
+              <td style="text-align:right; font-family:var(--font-mono); color:var(--text-muted); font-size:0.78rem;">₹${avgRate} / ${p.unit || 'kg'}</td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${formatCurrency(p.revenue)}</td>
+              <td style="text-align:right; color:var(--text-muted); font-size:0.75rem;">${share}%</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 5. Top Buyers Table
+      const topBuyersBody = document.getElementById('topBuyersBody');
+      if (data.topBuyers.length === 0) {
+        topBuyersBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-dim);">No buyers recorded in this period</td></tr>`;
+      } else {
+        topBuyersBody.innerHTML = data.topBuyers.map(b => {
+          const avg = b.billsCount > 0 ? (b.totalSpent / b.billsCount) : 0;
+          let statusBadge = '<span class="text-dim" style="font-size:0.72rem;">Spot Settled</span>';
+          let buyerNameHtml = `<strong>${b.name}</strong> <span class="text-dim" style="font-size:0.7rem;">(Spot Cash)</span>`;
+
+          if (b.id) {
+            buyerNameHtml = `
+              <a href="customers.html?search=${encodeURIComponent(b.name)}" class="font-bold text-main" style="text-decoration:none;" title="Click to view full Ledger">
+                ${b.name}
+              </a>
+            `;
+            if (b.totalOverdue > 0) {
+              statusBadge = `<span class="badge badge-danger">Due: ${formatCurrency(b.totalOverdue)}</span>`;
+            } else if (b.advanceCredit > 0) {
+              statusBadge = `<span class="badge badge-success">Advance: ${formatCurrency(b.advanceCredit)}</span>`;
+            } else {
+              statusBadge = `<span class="text-dim" style="font-size:0.72rem;">Clear</span>`;
+            }
+          }
+
+          return `
+            <tr>
+              <td>${buyerNameHtml}</td>
+              <td>${statusBadge}</td>
+              <td style="text-align:center; font-family:var(--font-mono);">${b.billsCount}</td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${formatCurrency(b.totalSpent)}</td>
+              <td style="text-align:right; font-family:var(--font-mono); color:var(--text-muted);">${formatCurrency(avg)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 6. Produce Profitability Leaderboard Table
+      const topProfitBody = document.getElementById('topProfitBody');
+      if (topProfitBody) {
+        const profitItems = data.topProduceProfit || [];
+        if (profitItems.length === 0) {
+          topProfitBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-dim);">No produce sales recorded in this period</td></tr>`;
+        } else {
+          topProfitBody.innerHTML = profitItems.map(p => {
+            const w = Number(p.weight) || 0;
+            const formattedWeight = (w % 1 === 0 ? w : w.toFixed(2));
+            const profitColor = p.profit >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+            return `
+              <tr>
+                <td><strong>${p.name}</strong></td>
+                <td style="text-align:right; font-family:var(--font-mono);">${formattedWeight} ${p.unit || 'kg'}</td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600;">${formatCurrency(p.revenue)}</td>
+                <td style="text-align:right; font-family:var(--font-mono); color:var(--text-muted);">₹${p.cost.toFixed(2)}</td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:700; color:${profitColor};">
+                  ${formatCurrency(p.profit)}
+                </td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600; color:${profitColor};">
+                  ${p.marginPct.toFixed(1)}%
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+    }
+  </script>
+</body>
+</html>
