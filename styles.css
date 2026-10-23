@@ -1034,6 +1034,9 @@ body {
   .billing-catalog {
     border-right: none;
   }
+  .billing-docket {
+    padding-bottom: 130px;
+  }
 }
 
 /* Mobile Floating Cart / Docket Bar */

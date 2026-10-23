@@ -500,12 +500,12 @@
     }
 
     function scrollToDocket() {
-      const docket = document.querySelector('.billing-docket');
-      if (docket) {
-        docket.scrollIntoView({ behavior: 'smooth' });
-        setTimeout(() => {
-          document.getElementById('docketCustomerSelect')?.focus();
-        }, 350);
+      const checkoutBtn = document.getElementById('docketCompleteBtn');
+      if (checkoutBtn) {
+        checkoutBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        const docket = document.querySelector('.billing-docket');
+        if (docket) docket.scrollIntoView({ behavior: 'smooth' });
       }
     }
 
