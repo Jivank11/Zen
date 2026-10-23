@@ -2383,7 +2383,7 @@ function dispatchMandiEvent(eventName, detail) {
     if (curVal) headerLocSelect.value = curVal;
   }
 
-  if (!handled) {
+  if (!handled && !window.location.pathname.includes('test.html') && typeof renderTestGroups !== 'function') {
     window.location.reload();
   }
 }
