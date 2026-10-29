@@ -297,14 +297,15 @@ function doPost(e) {
     }
 
     // -------------------------------------------------------------
-    // ACTION: BULK_SYNC_ALL (Full Sync of Customers, Rates, Settings)
+    // ACTION: BULK_SYNC_ALL (Full Sync of Customers, Rates, Inventory, Settings)
     // -------------------------------------------------------------
     if (action === "BULK_SYNC_ALL") {
-      if (payload.customers && payload.customers.length > 0) {
+      if (Array.isArray(payload.customers)) {
         syncCustomersList(ss, payload.customers);
       }
-      if (payload.items && payload.items.length > 0) {
+      if (Array.isArray(payload.items)) {
         syncRatesList(ss, payload.items);
+        syncInventoryList(ss, payload.items);
       }
       if (payload.shopProfile || payload.locations) {
         syncSettingsSheet(ss, payload.shopProfile, payload.locations);
@@ -455,6 +456,18 @@ function ensureCoreSheetsExist(ss) {
     settings = ss.insertSheet("Settings");
     settings.appendRow(["Setting Key", "Setting Value", "Extra Info"]);
     formatHeaderRow(settings, 3);
+  }
+
+  // 6. Inventory Sheet (Live Stock & Valuation Master)
+  var inv = ss.getSheetByName("Inventory");
+  if (!inv) {
+    inv = ss.insertSheet("Inventory");
+    inv.appendRow([
+      "Item ID", "Commodity Name", "Category", "Unit", 
+      "Current Stock", "Cost Rate (Rs)", "Selling Rate (Rs)", 
+      "Min Alert Stock", "Stock Valuation (Rs)", "Stock Status"
+    ]);
+    formatHeaderRow(inv, 10);
   }
 
   // Remove default "Sheet1" if it exists and is empty
@@ -644,6 +657,42 @@ function syncRatesList(ss, items) {
 
   items.forEach(function(i) {
     sheet.appendRow([i.id, i.name, i.category, i.unit, Number(i.defaultRate || 0)]);
+  });
+}
+
+/**
+ * Sync Inventory Sheet (Live Stock & Valuation Master)
+ */
+function syncInventoryList(ss, items) {
+  var sheet = ss.getSheetByName("Inventory");
+  if (!sheet) {
+    sheet = ss.insertSheet("Inventory");
+  }
+  sheet.clearContents();
+  sheet.appendRow([
+    "Item ID", "Commodity Name", "Category", "Unit", 
+    "Current Stock", "Cost Rate (Rs)", "Selling Rate (Rs)", 
+    "Min Alert Stock", "Stock Valuation (Rs)", "Stock Status"
+  ]);
+  formatHeaderRow(sheet, 10);
+
+  (items || []).forEach(function(i) {
+    var stock = Number(i.currentStock || 0);
+    var cost = Number(i.costPrice || 0);
+    var rate = Number(i.defaultRate || 0);
+    var min = Number(i.minAlertStock || 20);
+    var val = stock * cost;
+    var status = "Healthy";
+    if (stock <= 0) {
+      status = "Out of Stock";
+    } else if (stock <= min) {
+      status = "Low Alert";
+    }
+
+    sheet.appendRow([
+      i.id, i.name, i.category || "Produce", i.unit || "kg",
+      stock, cost, rate, min, val, status
+    ]);
   });
 }
 
