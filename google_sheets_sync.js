@@ -273,6 +273,30 @@ function doPost(e) {
     }
 
     // -------------------------------------------------------------
+    // ACTION: DELETE_CUSTOMER (Real-time Customer Deletion)
+    // -------------------------------------------------------------
+    if (action === "DELETE_CUSTOMER") {
+      var customerId = payload.customerId;
+      var custSheet = ss.getSheetByName("Customers");
+      if (custSheet && customerId) {
+        var cData = custSheet.getDataRange().getValues();
+        for (var cr = 1; cr < cData.length; cr++) {
+          if (String(cData[cr][0]).trim() === String(customerId).trim()) {
+            custSheet.deleteRow(cr + 1);
+            break;
+          }
+        }
+      }
+      var stats = calculateCapacityStats(ss);
+      return jsonResponse({
+        status: "success",
+        customerId: customerId,
+        message: "Customer deleted from cloud master",
+        stats: stats
+      });
+    }
+
+    // -------------------------------------------------------------
     // ACTION: BULK_SYNC_ALL (Full Sync of Customers, Rates, Settings)
     // -------------------------------------------------------------
     if (action === "BULK_SYNC_ALL") {

@@ -97,6 +97,7 @@
           <option value="6M">Last 6 Months</option>
           <option value="ALL">All Time</option>
         </select>
+        <button type="button" class="btn-ghost" id="btnClearDemoCustomersBtn" onclick="handleClearDemoCustomers()" style="color:var(--color-danger); border-color:var(--border-subtle);" title="Clear all demo customer entries">Clear Demo Data</button>
         <button type="button" class="btn-primary" onclick="openGlobalCustomerModal()">+ Add Customer</button>
       </div>
     </div>
@@ -172,7 +173,10 @@
 
       </div>
       <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
-        <button type="button" class="btn-ghost" onclick="closeModal('statementModal')">Close</button>
+        <div>
+          <button type="button" class="btn-ghost" onclick="closeModal('statementModal')">Close</button>
+          <button type="button" class="btn-ghost" style="color:var(--color-danger); border-color:var(--color-danger-border); margin-left:6px;" onclick="handleDeleteFromStatementModal()">Delete Customer</button>
+        </div>
         <button type="button" class="btn-whatsapp" id="btnShareStatementWhatsApp" onclick="handleShareActiveStatementWhatsApp()" title="Share statement via WhatsApp">Share WhatsApp</button>
       </div>
     </div>
@@ -358,8 +362,9 @@
               <td style="text-align:right; font-family:var(--font-mono); font-weight:800; font-size:0.95rem;" class="${bal.totalOverdue > 0 ? 'text-danger' : (bal.advanceCredit > 0 ? 'text-success' : 'text-dim')}">
                 ${bal.advanceCredit > 0 ? `${formatCurrency(-bal.advanceCredit)} <span class="badge" style="font-size:0.65rem; background:rgba(16,185,129,0.15); color:var(--color-success); vertical-align:middle;">Jama</span>` : formatCurrency(bal.totalOverdue)}
               </td>
-              <td style="text-align:center;" onclick="event.stopPropagation()">
+              <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation()">
                 <button class="btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="openGlobalRepaymentModal('${cust.id}')">Settle</button>
+                <button class="btn-ghost" style="padding:2px 6px; font-size:0.72rem; color:var(--color-danger); border-color:var(--border-subtle); margin-left:4px;" onclick="confirmDeleteCustomer('${cust.id}')" title="Delete customer">Delete</button>
               </td>
             </tr>
           `;
@@ -387,8 +392,9 @@
               <td style="text-align:right; font-family:var(--font-mono); font-weight:800; font-size:0.95rem;" class="${p.currentBalance > 0 ? 'text-danger' : (p.currentBalance < 0 ? 'text-success' : 'text-dim')}">
                 ${p.currentBalance < 0 ? `${formatCurrency(p.currentBalance)} <span class="badge" style="font-size:0.65rem; background:rgba(16,185,129,0.15); color:var(--color-success); vertical-align:middle;">Jama</span>` : formatCurrency(p.currentBalance)}
               </td>
-              <td style="text-align:center;" onclick="event.stopPropagation()">
+              <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation()">
                 <button class="btn-primary" style="padding:2px 8px; font-size:0.72rem;" onclick="openGlobalRepaymentModal('${cust.id}')">Settle</button>
+                <button class="btn-ghost" style="padding:2px 6px; font-size:0.72rem; color:var(--color-danger); border-color:var(--border-subtle); margin-left:4px;" onclick="confirmDeleteCustomer('${cust.id}')" title="Delete customer">Delete</button>
               </td>
             </tr>
           `;
@@ -498,6 +504,79 @@
       if (!activeCustIdForStatement) return;
       const period = document.getElementById('statementPeriodSelect')?.value || '1M';
       shareCustomerStatementViaWhatsApp(activeCustIdForStatement, period);
+    }
+
+    function confirmDeleteCustomer(custId) {
+      const cust = (store.data.customers || []).find(c => c.id === custId);
+      if (!cust) return;
+
+      const bal = store.getCustomerBalanceBreakdown(custId, store.currentDate);
+      const hasDues = (bal.totalOverdue > 0) || (bal.advanceCredit > 0);
+
+      if (hasDues) {
+        const dueAmount = bal.totalOverdue > 0 ? bal.totalOverdue : -bal.advanceCredit;
+        const dueFormatted = formatCurrency(Math.abs(dueAmount));
+        const isOverdue = bal.totalOverdue > 0;
+        const balanceText = isOverdue ? `an outstanding debt of ${dueFormatted}` : `an advance deposit balance of ${dueFormatted}`;
+
+        promptOwnerPin(`Customer '${cust.name}' has ${balanceText}. Enter Owner PIN to force delete:`, () => {
+          if (confirm(`Confirm permanent deletion of '${cust.name}' (${balanceText})?`)) {
+            store.deleteCustomer(custId, true);
+            alert(`Customer '${cust.name}' has been deleted.`);
+            renderCustomersPage();
+          }
+        });
+        return;
+      }
+
+      if (confirm(`Delete customer '${cust.name}' from Khata?`)) {
+        store.deleteCustomer(custId, false);
+        renderCustomersPage();
+      }
+    }
+
+    function handleDeleteFromStatementModal() {
+      if (!activeCustIdForStatement) return;
+      const targetId = activeCustIdForStatement;
+      closeModal('statementModal');
+      confirmDeleteCustomer(targetId);
+    }
+
+    function handleClearDemoCustomers() {
+      const customers = store.data.customers || [];
+      if (customers.length === 0) {
+        alert('No customers to clear.');
+        return;
+      }
+      const demoIds = ['cust-1', 'cust-2', 'cust-3', 'cust-4', 'cust-5', 'cust-6', 'cust-7', 'cust-8', 'cust-9', 'cust-10'];
+      const hasDemo = customers.some(c => demoIds.includes(c.id));
+
+      const promptMsg = hasDemo
+        ? 'Delete all demo customers? Any customer with an active balance will require Owner PIN.'
+        : 'Clear all customers from ledger? Any customer with an active balance will require Owner PIN.';
+
+      if (confirm(promptMsg)) {
+        const debtors = customers.filter(c => {
+          const bal = store.getCustomerBalanceBreakdown(c.id, store.currentDate);
+          return bal.totalOverdue > 0 || bal.advanceCredit > 0;
+        });
+
+        if (debtors.length > 0) {
+          promptOwnerPin(`Found ${debtors.length} customer(s) with active balances. Enter Owner PIN to confirm clearing:`, () => {
+            store.data.customers = [];
+            localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
+            store.save(store.data);
+            alert('All customers cleared successfully!');
+            renderCustomersPage();
+          });
+        } else {
+          store.data.customers = [];
+          localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
+          store.save(store.data);
+          alert('All customers cleared successfully!');
+          renderCustomersPage();
+        }
+      }
     }
   </script>
 </body>

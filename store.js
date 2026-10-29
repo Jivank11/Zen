@@ -719,14 +719,13 @@ class CoreStore {
         { id: 'itm-2', name: 'Nashik Red Onion', category: 'Vegetables', unit: 'kg', defaultRate: 28.50 },
         { id: 'itm-3', name: 'Agra Potato (Jyoti)', category: 'Vegetables', unit: 'kg', defaultRate: 22.00 }
       ],
-      customers: [
-        { id: 'cust-1', name: 'Ramesh Sabzi Bhandar', phone: '9822011223', locationId: 'loc-1', openingPastDue: 0.00 }
-      ],
+      customers: [],
       sales: [],
       payments: [],
       recycleBin: [],
       cloudConfig: getCloudConfig()
     };
+    localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
     this.save(clean);
     this.currentLocationId = this.data.locations[0]?.id || 'loc-1';
     this.currentDate = getTodayDateString();
@@ -1540,6 +1539,7 @@ class CoreStore {
       this.data.customers.push(customer);
     }
 
+    localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
     this.save();
 
     if (this.data.cloudConfig && this.data.cloudConfig.scriptUrl && this.data.cloudConfig.autoSync) {
@@ -1547,6 +1547,70 @@ class CoreStore {
     }
 
     return customer;
+  }
+
+  deleteCustomer(custId, force = false) {
+    if (!custId || !Array.isArray(this.data.customers)) {
+      return { success: false, message: 'Invalid customer ID' };
+    }
+    const custIndex = this.data.customers.findIndex(c => c.id === custId);
+    if (custIndex === -1) {
+      return { success: false, message: 'Customer not found' };
+    }
+    const cust = this.data.customers[custIndex];
+
+    // Safety balance check
+    const bal = this.getCustomerBalanceBreakdown(custId, this.currentDate);
+    const hasDues = (bal.totalOverdue > 0) || (bal.advanceCredit > 0);
+
+    if (hasDues && !force) {
+      const dueAmount = bal.totalOverdue > 0 ? bal.totalOverdue : -bal.advanceCredit;
+      return {
+        success: false,
+        hasDues: true,
+        dueAmount,
+        message: `Customer has an active balance. Settle balance first or use Owner PIN.`
+      };
+    }
+
+    this.data.customers.splice(custIndex, 1);
+    localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
+    this.save(this.data);
+
+    if (this.data.cloudConfig && this.data.cloudConfig.scriptUrl && this.data.cloudConfig.autoSync) {
+      this.syncCustomerDeleteToCloud(custId);
+    }
+
+    dispatchMandiEvent('customer-deleted', { id: custId, name: cust.name });
+    return { success: true, customer: cust };
+  }
+
+  deleteCustomers(custIds, force = false) {
+    if (!Array.isArray(custIds) || custIds.length === 0) return { success: false, count: 0 };
+    let deletedCount = 0;
+    custIds.forEach(id => {
+      const res = this.deleteCustomer(id, force);
+      if (res.success) deletedCount++;
+    });
+    return { success: true, count: deletedCount };
+  }
+
+  async syncCustomerDeleteToCloud(customerId) {
+    if (!this.data.cloudConfig || !this.data.cloudConfig.scriptUrl) return;
+    try {
+      const payload = {
+        action: 'DELETE_CUSTOMER',
+        customerId: customerId
+      };
+      await fetch(this.data.cloudConfig.scriptUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.warn('Customer cloud delete sync queued:', err);
+    }
   }
 
   async syncCustomerToCloud(customer) {

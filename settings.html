@@ -582,17 +582,17 @@
         <div class="settings-card">
           <h3 class="card-title" style="color:var(--color-danger);">System Reset & Factory Defaults</h3>
           <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">
-            Reset your database to the clean initial demo dataset. Useful for clearing out test transactions and restarting fresh.
+            Reset your database to a completely blank production ledger, or load the realistic 10-party demo dataset for practice.
           </p>
           <div style="padding:0.85rem; background:var(--color-danger-bg); border:1px solid var(--color-danger-border); border-radius:var(--radius-xs); margin-bottom:1rem;">
             <strong style="color:var(--color-danger); font-size:0.78rem; display:block;">Warning: Irreversible Action</strong>
-            <span style="font-size:0.74rem; color:var(--text-muted);">Resetting will wipe current transactions. Export an Excel backup first if you need to keep records.</span>
+            <span style="font-size:0.74rem; color:var(--text-muted);">Resetting will wipe transactions and balances. Export an Excel backup first if you need to keep records.</span>
           </div>
-          <button type="button" class="btn-primary" id="btnLoadRichTest" style="width:100%; text-align:center; margin-bottom:0.75rem; padding:0.6rem 1rem;">
-            Load Complete Mandi Test Dataset (20 Items, 10 Parties, Multi-day Aging)
+          <button type="button" class="btn-ghost" id="btnResetDemo" style="color:var(--color-danger); border-color:var(--color-danger-border); width:100%; text-align:center; margin-bottom:0.75rem; padding:0.6rem 1rem;">
+            Reset to Clean Defaults (Fresh Empty Ledger - Zero Customers & Zero Bills)
           </button>
-          <button type="button" class="btn-ghost" id="btnResetDemo" style="color:var(--color-danger); border-color:var(--color-danger-border); width:100%; text-align:center;">
-            Reset to Clean Defaults (Fresh Empty Shop Ledger)
+          <button type="button" class="btn-primary" id="btnLoadRichTest" style="width:100%; text-align:center; padding:0.6rem 1rem;">
+            Load Complete Mandi Test Dataset (20 Items, 10 Parties, Multi-day Aging)
           </button>
         </div>
 
@@ -691,7 +691,7 @@
       // Reset Demo Dataset (Clean Empty Slate for Live Billing)
       document.getElementById('btnResetDemo')?.addEventListener('click', () => {
         promptOwnerPin('Reset Database to Clean Defaults', () => {
-          if (confirm('Reset to clean empty shop ledger? This erases transactions and debts to zero while keeping shop profile and produce catalog so you can start live billing.')) {
+          if (confirm('Reset to clean empty shop ledger? This erases all customers, transactions, and debts to zero while keeping your shop profile and produce rates catalog so you can start live billing.')) {
             store.resetToCleanSlate();
             alert('Data reset to clean empty shop ledger! Ready for fresh billing.');
             window.location.reload();
