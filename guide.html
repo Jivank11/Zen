@@ -155,21 +155,35 @@
       color: var(--text-main);
     }
 
-    .guide-kbd {
-      font-family: var(--font-mono);
-      background: var(--bg-hover);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-xs);
-      padding: 1px 5px;
-      font-size: 0.72rem;
-      color: var(--text-main);
-    }
-
     .guide-grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
       margin-top: 0.75rem;
+    }
+
+    .guide-img-wrap {
+      margin: 0.85rem 0 1rem 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+      background: var(--bg-hover);
+      box-shadow: var(--shadow-card);
+    }
+
+    .guide-img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .guide-img-caption {
+      padding: 0.45rem 0.75rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+      font-weight: 500;
     }
 
     @media (max-width: 768px) {
@@ -194,7 +208,7 @@
         <div>
           <h2 style="font-size:1.45rem; font-weight:800; margin-bottom:0.25rem;">Zen — Operating Manual & Help Center</h2>
           <span style="font-size:0.8rem; color:var(--text-muted);">
-            Complete procedural reference for counter billing, customer khata ledger, daybook audit, inventory stock, and Google Sheets cloud synchronization.
+            Complete procedural reference for counter billing, customer khata ledger, daybook audit, inventory stock, rates master, and Google Sheets cloud synchronization.
           </span>
         </div>
         <button type="button" class="btn-ghost" id="btnToggleAllSections" style="font-size:0.75rem; padding:4px 10px;">
@@ -203,7 +217,7 @@
       </div>
 
       <div class="guide-search-wrap">
-        <input type="text" id="guideSearchInput" class="guide-search-input" placeholder="Search operating steps (e.g. 'PIN', 'Thermal', 'Rollover', 'WhatsApp', 'Recover', 'Overdue')...">
+        <input type="text" id="guideSearchInput" class="guide-search-input" placeholder="Search operating steps (e.g. 'PIN', 'Thermal', 'Rollover', 'WhatsApp', 'Blank Slate', 'Download', 'Wastage')...">
       </div>
 
       <div class="guide-filters" id="guideFilterBar">
@@ -211,9 +225,11 @@
         <button type="button" class="guide-pill" onclick="filterGuideCategory('BILLING', this)">Billing & Docket</button>
         <button type="button" class="guide-pill" onclick="filterGuideCategory('KHATA', this)">Customers & Khata</button>
         <button type="button" class="guide-pill" onclick="filterGuideCategory('DAYBOOK', this)">Daybook (Roznamcha)</button>
-        <button type="button" class="guide-pill" onclick="filterGuideCategory('STOCK', this)">Inventory & Wastage</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('STOCK', this)">Inventory & Stock</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('RATES', this)">Rates Master</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('DASHBOARD', this)">Executive Dashboard</button>
         <button type="button" class="guide-pill" onclick="filterGuideCategory('CLOUD', this)">Google Sheets Sync</button>
-        <button type="button" class="guide-pill" onclick="filterGuideCategory('SAFETY', this)">Security & Recycle Bin</button>
+        <button type="button" class="guide-pill" onclick="filterGuideCategory('SAFETY', this)">Security & Maintenance</button>
       </div>
     </div>
 
@@ -234,10 +250,15 @@
         <div class="strip-val" style="font-size:1.05rem;">Daybook Audit</div>
         <small class="text-dim">Cash drawer vs khata recoveries</small>
       </a>
-      <a href="#sec-cloud" class="strip-card" style="text-decoration:none; cursor:pointer;">
+      <a href="#sec-stock" class="strip-card" style="text-decoration:none; cursor:pointer;">
         <span class="strip-label">Module 4</span>
+        <div class="strip-val" style="font-size:1.05rem;">Inventory</div>
+        <small class="text-dim">Live stock valuation & wastage</small>
+      </a>
+      <a href="#sec-cloud" class="strip-card" style="text-decoration:none; cursor:pointer;">
+        <span class="strip-label">Module 5</span>
         <div class="strip-val" style="font-size:1.05rem;">Google Sheets</div>
-        <small class="text-dim">Live sync, rollover & cloud backup</small>
+        <small class="text-dim">Upload, download & annual rollover</small>
       </a>
     </div>
 
@@ -253,13 +274,18 @@
           <span class="badge">Global</span>
         </div>
         <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/header_navigation.png" alt="Zen Global Header Controls" class="guide-img">
+            <div class="guide-img-caption">Figure 1.1: Global header bar with location stall selector, operational date picker, cloud sync indicator, owner lock, and quick actions.</div>
+          </div>
+
           <div class="guide-step-box">
             <div class="guide-step-title">1.1 Top Header Controls</div>
             <div class="guide-step-body">
               <ul>
-                <li><strong>Location Dropdown:</strong> Select your active selling shed or platform (e.g. <em>Main Mandi Yard</em>, <em>Wholesale Shed B</em>). All new bills will automatically tag this stall.</li>
-                <li><strong>Date Selector:</strong> Changes the operational working date. Allows inspecting past days' transactions or back-dating bills.</li>
-                <li><strong>Cloud Sync Pill:</strong> Displays connection state:
+                <li><strong>Location Stall Dropdown:</strong> Select your active trading platform (e.g. <em>Main Mandi Yard</em>, <em>Wholesale Shed B</em>). Every bill generated will automatically tag this stall for isolated or combined accounting.</li>
+                <li><strong>Operational Date Picker:</strong> Changes the operational working date. Allows inspecting past days' transactions, verifying customer accounts on a previous date, or issuing back-dated bills.</li>
+                <li><strong>Cloud Sync Pill:</strong> Displays live connection state:
                   <ul>
                     <li><strong class="text-success">Synced:</strong> Local device is connected and current with Google Sheets.</li>
                     <li><strong class="text-warning">[N] Queued:</strong> Offline bills stored safely on device, waiting for internet connection.</li>
@@ -267,7 +293,7 @@
                   </ul>
                   Clicking the pill opens immediate sync queue details and allows manual 1-click flushing.
                 </li>
-                <li><strong>Owner Lock:</strong> Toggles between Cashier Mode and Owner Unlocked mode. When cashiers are on duty, sensitive actions (resetting ledger, annual rollover, deleting bills) are locked behind the 4-digit PIN.</li>
+                <li><strong>Owner Lock:</strong> Toggles between Cashier Mode and Owner Unlocked mode. When cashiers are on duty, sensitive actions (resetting ledger, annual rollover, deleting customers or bills) are locked behind the 4-digit PIN.</li>
                 <li><strong>Language Toggle (English / हिन्दी):</strong> Instantly switches all headings, receipts, and table headers between English and Hindi.</li>
                 <li><strong>Theme Toggle (Dark / Light):</strong> Switches between dark high-contrast mode (optimized for 4:00 AM auction yards) and daylight mode.</li>
               </ul>
@@ -285,11 +311,16 @@
           <span class="badge badge-success">Core POS</span>
         </div>
         <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/billing_desk.png" alt="Zen Billing Desk Interface" class="guide-img">
+            <div class="guide-img-caption">Figure 2.1: Rapid Billing Desk with catalog commodity tiles on the left and active bill docket on the right.</div>
+          </div>
+
           <div class="guide-step-box">
             <div class="guide-step-title">2.1 How to Record a Bill</div>
             <div class="guide-step-body">
               <ol>
-                <li>Open the <strong>Billing</strong> tab from top navigation or mobile bottom bar.</li>
+                <li>Open the <strong>Billing</strong> tab from the top navigation or mobile bottom bar.</li>
                 <li><strong>Select Buyer / Party:</strong>
                   <ul>
                     <li>Choose <strong>Walk-in Cash Buyer</strong> for spot retail sales.</li>
@@ -298,7 +329,7 @@
                 </li>
                 <li><strong>Choose Sale Type:</strong>
                   <ul>
-                    <li><strong>Direct Cash:</strong> Buyer pays immediately. The cash in drawer increases.</li>
+                    <li><strong>Direct Cash:</strong> Buyer pays immediately. The physical cash drawer balance increases.</li>
                     <li><strong>Daily Credit (Khata):</strong> Buyer takes goods on credit. Bill amount is added to their ledger balance.</li>
                   </ul>
                 </li>
@@ -313,16 +344,20 @@
                 <li><strong>Complete & Print:</strong>
                   <ul>
                     <li>The docket computes <strong>Gross Subtotal</strong>, applies automatic <strong>Round-off</strong>, and calculates <strong>Final Payable</strong>.</li>
-                    <li>Click <strong>Complete & Print Bill</strong>.</li>
-                    <li>An 80mm thermal receipt modal appears automatically.</li>
-                  </ol>
+                    <li>Click <strong>Complete & Print Bill</strong>. The 80mm thermal receipt modal appears automatically.</li>
+                  </ul>
                 </li>
               </ol>
             </div>
           </div>
 
+          <div class="guide-img-wrap">
+            <img src="assets/guide/thermal_receipt.png" alt="80mm Thermal Receipt Preview" class="guide-img">
+            <div class="guide-img-caption">Figure 2.2: 80mm Thermal Receipt Slip with firm details, customer balance breakdown, print button, and instant WhatsApp dispatch.</div>
+          </div>
+
           <div class="guide-step-box">
-            <div class="guide-step-title">2.2 Printing & WhatsApp Dispatch</div>
+            <div class="guide-step-title">2.2 Thermal Printing & WhatsApp Dispatch</div>
             <div class="guide-step-body">
               <ul>
                 <li><strong>Thermal Printing:</strong> In the receipt modal, click <strong>Print Thermal Slip</strong>. Optimized for 80mm and 58mm thermal receipt printers with zero margins.</li>
@@ -348,20 +383,30 @@
           <span class="badge">Accounting</span>
         </div>
         <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/customer_khata.png" alt="Customer Khata Ledger Table" class="guide-img">
+            <div class="guide-img-caption">Figure 3.1: Customer Ledger displaying 4-part balance engine, filter controls, Clear Demo Data toolbar, and row delete actions.</div>
+          </div>
+
           <div class="guide-step-box">
             <div class="guide-step-title">3.1 Understanding the 4-Part Balance Engine</div>
             <div class="guide-step-body">
               <p>Zen calculates customer dues dynamically directly from all bills and payments. Every customer row displays:</p>
               <ul>
-                <li><strong>Past Overdue:</strong> Debt accumulated from previous trading dates minus previous payments.</li>
-                <li><strong>Today's Credit:</strong> Goods purchased on credit during the active trading day.</li>
-                <li><strong>Today's Repaid:</strong> Cash or UPI deposits collected from the customer today.</li>
-                <li><strong>Total Balance:</strong> Current live net payable due from the customer.</li>
+                <li><strong>Opening Due:</strong> Debt accumulated from previous trading dates minus previous payments.</li>
+                <li><strong>Taken (Period):</strong> Goods purchased on credit during the selected period.</li>
+                <li><strong>Repaid (Period):</strong> Cash, UPI, or Bank deposits collected from the customer during the period.</li>
+                <li><strong>Current Balance:</strong> Current live net payable due from the customer.</li>
               </ul>
               <div class="guide-callout guide-callout-info">
                 <strong>Advance Deposits (Jama):</strong> If a customer deposits extra cash in advance, the system automatically treats it as advance credit. Future credit purchases automatically draw against this advance deposit first.
               </div>
             </div>
+          </div>
+
+          <div class="guide-img-wrap">
+            <img src="assets/guide/customer_statement.png" alt="Customer Statement Modal" class="guide-img">
+            <div class="guide-img-caption">Figure 3.2: Customer Statement modal with period balance breakdown, chronological transaction history, payment collection, and customer deletion.</div>
           </div>
 
           <div class="guide-step-box">
@@ -378,14 +423,17 @@
           </div>
 
           <div class="guide-step-box">
-            <div class="guide-step-title">3.3 Debt Aging Watchlist</div>
+            <div class="guide-step-title">3.3 Deleting Customers & Clearing Demo Data</div>
             <div class="guide-step-body">
-              <p>Under the Customers tab, check the <strong>Debt Aging Watchlist</strong>. It categorizes overdue debts into:</p>
               <ul>
-                <li><strong class="text-success">0 - 7 Days:</strong> Fresh credit (healthy).</li>
-                <li><strong class="text-warning">8 - 15 Days:</strong> Warning threshold (recovery reminder recommended).</li>
-                <li><strong style="color:#ea580c;">16 - 30 Days:</strong> High risk overdue.</li>
-                <li><strong class="text-danger">30+ Days:</strong> Critical chronic debt.</li>
+                <li><strong>Deleting an Individual Customer:</strong> Click the <strong>Delete</strong> button on any customer row (or inside their statement modal).
+                  <ul>
+                    <li>If the customer has zero balance and zero active bills, they are deleted immediately without requiring a PIN.</li>
+                    <li>If the customer has an active balance or transaction history, Zen demands the <strong>Owner Security PIN</strong> to prevent accidental balance loss.</li>
+                    <li>Once deleted, the customer is permanently removed and the auto-seeder will never re-inject them on page reload.</li>
+                  </ul>
+                </li>
+                <li><strong>Clear Demo Data Button:</strong> Located in the Customers toolbar. Allows 1-click removal of mock demo customers while keeping any real parties you added. Prompts for Owner PIN if any active balances exist.</li>
               </ul>
             </div>
           </div>
@@ -401,6 +449,11 @@
           <span class="badge">Audit</span>
         </div>
         <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/daybook_audit.png" alt="Daybook Audit Register" class="guide-img">
+            <div class="guide-img-caption">Figure 4.1: Daybook audit register with cash drawer breakdown, transaction filters, duplicate receipt printing, and CSV export.</div>
+          </div>
+
           <div class="guide-step-box">
             <div class="guide-step-title">4.1 Daily Cash Drawer Reconciliation</div>
             <div class="guide-step-body">
@@ -440,14 +493,19 @@
           <span class="badge">Stock</span>
         </div>
         <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/inventory_stock.png" alt="Inventory and Stock Valuation" class="guide-img">
+            <div class="guide-img-caption">Figure 5.1: Inventory Board showing total stock valuation, low stock alerts, inward truck arrivals, and spoilage tracking.</div>
+          </div>
+
           <div class="guide-step-box">
             <div class="guide-step-title">5.1 Inward Arrivals (Aamad / Purchase)</div>
             <div class="guide-step-body">
               <ol>
-                <li>When fresh trucks arrive at your stall, click <strong>+ Inward Stock</strong> in the Inventory tab.</li>
+                <li>When fresh trucks or shipments arrive at your stall, click <strong>+ Inward Stock</strong> in the Inventory tab.</li>
                 <li>Select the produce item and enter the inward quantity (e.g. 50 crates or 500 kg).</li>
                 <li>Enter the truck vehicle number, supplier source, and purchase cost price per unit.</li>
-                <li>Current inventory stock updates immediately.</li>
+                <li>Current inventory stock and stock valuation update immediately.</li>
               </ol>
             </div>
           </div>
@@ -466,103 +524,147 @@
         </div>
       </section>
 
-      <!-- SECTION 6: GOOGLE SHEETS CLOUD SYNC -->
+      <!-- SECTION 6: RATES MASTER & COMMODITY BOARD -->
+      <section class="guide-section" id="sec-rates" data-category="RATES">
+        <div class="guide-section-header" onclick="toggleSection('sec-rates')">
+          <div class="guide-section-title">
+            <span>6. Produce Rates Master & Wholesale Pricing Board</span>
+          </div>
+          <span class="badge">Pricing</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/rates_board.png" alt="Rates Master Produce Board" class="guide-img">
+            <div class="guide-img-caption">Figure 6.1: Wholesale Rates Master with category filters, search box, produce addition, and inline rate editing.</div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">6.1 Setting Daily Auction Rates</div>
+            <div class="guide-step-body">
+              <ol>
+                <li>Click <strong>Rates</strong> in the top navigation bar before morning trading commences.</li>
+                <li>Locate the commodity you want to update (e.g. <em>Red Tomato</em>, <em>Nashik Onion</em>).</li>
+                <li>Click <strong>Edit Rate</strong>, enter the new wholesale rate (₹/unit), and click <strong>Save</strong>.</li>
+                <li>All subsequent bills created on the Billing desk will immediately reflect the new rate.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 7: EXECUTIVE DASHBOARD -->
+      <section class="guide-section" id="sec-dashboard" data-category="DASHBOARD">
+        <div class="guide-section-header" onclick="toggleSection('sec-dashboard')">
+          <div class="guide-section-title">
+            <span>7. Executive Business Dashboard & Risk Metrics</span>
+          </div>
+          <span class="badge">Analytics</span>
+        </div>
+        <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/executive_dashboard.png" alt="Executive Business Dashboard" class="guide-img">
+            <div class="guide-img-caption">Figure 7.1: Executive Business Dashboard with KPI metrics, aging distribution bar, top debtors list, and revenue leaders.</div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">7.1 Key Performance Indicators (KPIs)</div>
+            <div class="guide-step-body">
+              <ul>
+                <li><strong>Outstanding Debt:</strong> Total active market balance owed to your firm across all customers.</li>
+                <li><strong>Advance Deposits (Jama):</strong> Total excess payments deposited by parties available for future drawing.</li>
+                <li><strong>Sales Turnover:</strong> Gross sales value across all spot cash and credit bills within the selected date window.</li>
+                <li><strong>Gross & Net Profit:</strong> Real-time profit calculated by subtracting commodity cost prices and inventory spoilage loss from final sales revenue.</li>
+                <li><strong>Stock Valuation:</strong> Total value of goods sitting in your shop at purchase cost price.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 8: GOOGLE SHEETS CLOUD SYNC -->
       <section class="guide-section" id="sec-cloud" data-category="CLOUD">
         <div class="guide-section-header" onclick="toggleSection('sec-cloud')">
           <div class="guide-section-title">
-            <span>6. Google Sheets Cloud Sync & Annual Rollover</span>
+            <span>8. Google Sheets Cloud Sync & Bidirectional Transfers</span>
           </div>
           <span class="badge badge-success">Cloud</span>
         </div>
         <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/settings_cloud.png" alt="Google Sheets Cloud Sync Settings" class="guide-img">
+            <div class="guide-img-caption">Figure 8.1: Google Sheets Cloud tab with Web App URL configuration, Upload Local to Sheet, Download from Sheet, and capacity tracking.</div>
+          </div>
+
           <div class="guide-step-box">
-            <div class="guide-step-title">6.1 Google Apps Script Backend Setup</div>
+            <div class="guide-step-title">8.1 Connecting Any Google Spreadsheet</div>
             <div class="guide-step-body">
               <ol>
-                <li>Create a Google Sheet at <code>sheets.new</code> named <code>Mandi_Ledger_2026_27</code>.</li>
-                <li>Go to <strong>Extensions -> Apps Script</strong>.</li>
-                <li>Paste the entire contents of <code>google_sheets_sync.js</code> into the editor.</li>
+                <li>Open your spreadsheet in Google Sheets (e.g. <code>test-table</code> or <code>Mandi_Ledger_2026_27</code>).</li>
+                <li>Click <strong>Extensions -> Apps Script</strong> in the Google Sheets top menu.</li>
+                <li>Paste the complete code from <code>google_sheets_sync.js</code> into the editor and save.</li>
                 <li>Click <strong>Deploy -> New deployment</strong>. Select type <strong>Web app</strong>.</li>
                 <li>Set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong>.</li>
-                <li>Authorize Google permissions and copy the Web App URL (ends with <code>/exec</code>).</li>
+                <li>Click <strong>Deploy</strong>, grant Google permissions, and copy the Web App URL (ends with <code>/exec</code>).</li>
                 <li>Paste this URL in Zen <strong>Settings -> Google Sheets & Cloud</strong> tab and click <strong>Save & Test Connection</strong>.</li>
               </ol>
             </div>
           </div>
 
           <div class="guide-step-box">
-            <div class="guide-step-title">6.2 1-Click Annual Rollover (Salana Khata Bandi)</div>
+            <div class="guide-step-title">8.2 Upload Local to Sheet vs Download from Sheet</div>
             <div class="guide-step-body">
-              <p>When the financial year ends on March 31:</p>
-              <ol>
-                <li>Go to <strong>Settings -> Google Sheets & Cloud</strong> tab.</li>
-                <li>Review the <strong>Annual Rollover & Customer Migration</strong> preview card. It shows total parties to carry forward and outstanding closing dues.</li>
-                <li>Enter the new fiscal year label (e.g. <code>2027_28</code>).</li>
-                <li>Click <strong>Execute Annual Rollover & Carry Forward Dues</strong>.</li>
-                <li>The script automatically creates a brand new spreadsheet in your Google Drive named <code>Mandi_Ledger_2027_28</code>, migrates every party, converts their closing debts into new Opening Dues, copies produce rates, and seals the previous year as a read-only historical archive.</li>
-              </ol>
+              <ul>
+                <li><strong>Upload Local to Sheet:</strong> Takes your local browser records (customers, rates, inventory) and overwrites the Google Sheets database. If your local store is empty, it warns you before truncating the sheet.</li>
+                <li><strong>Download from Sheet:</strong> Downloads all records from your Google Sheet (Customers, Rates, Inventory, Settings) and hydrates your local browser storage. Ideal for syncing a clean slate or adopting a pre-filled catalog.</li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SECTION 7: SECURITY & RECYCLE BIN -->
+      <!-- SECTION 9: SECURITY, SYSTEM RESETS & RECYCLE BIN -->
       <section class="guide-section" id="sec-safety" data-category="SAFETY">
         <div class="guide-section-header" onclick="toggleSection('sec-safety')">
           <div class="guide-section-title">
-            <span>7. Security PIN & Recycle Bin (Deleted Records Vault)</span>
+            <span>9. Security PIN, System Resets & Recycle Bin</span>
           </div>
           <span class="badge badge-warn">Security</span>
         </div>
         <div class="guide-section-content">
+          <div class="guide-img-wrap">
+            <img src="assets/guide/settings_reset.png" alt="System Resets and Maintenance" class="guide-img">
+            <div class="guide-img-caption">Figure 9.1: Backup & Maintenance tab with Owner Security PIN configuration, Clean Ledger reset, 100% Blank Slate wipe, and system cloning.</div>
+          </div>
+
           <div class="guide-step-box">
-            <div class="guide-step-title">7.1 Owner PIN Security</div>
+            <div class="guide-step-title">9.1 Choosing the Right System Reset</div>
+            <div class="guide-step-body">
+              <ul>
+                <li><strong>Reset to Clean Produce Ledger:</strong> Wipes all customers (`customers: []`), active bills, payments, inward batches, wastage, and demo previous year archives (`archivedYears: []`), but keeps standard produce items and wholesale rates.</li>
+                <li><strong>Wipe to 100% Blank Slate:</strong> Completely wipes EVERYTHING to 0 (zero produce items, zero inventory, zero customers, zero bills, and zero archives). Perfect for starting an entirely new business (cleaning agency, wholesale trader, etc.) or downloading fresh data from Google Sheets.</li>
+                <li><strong>Load Complete Mandi Test Dataset:</strong> Seeds a 20-commodity produce catalog, 10 realistic customer accounts with multi-day credit aging, and previous year historical archives for training.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="guide-step-box">
+            <div class="guide-step-title">9.2 Owner Security PIN</div>
             <div class="guide-step-body">
               <ul>
                 <li>The default Owner PIN is <strong><code>1234</code></strong>.</li>
-                <li>You can update your PIN at any time in <strong>Settings -> Backup & Maintenance -> Owner Security PIN</strong>.</li>
-                <li>Whenever a cashier attempts to delete a bill, perform database resets, or change cloud configurations, Zen demands this 4-digit PIN before proceeding.</li>
+                <li>You can update your PIN in <strong>Settings -> Backup & Maintenance -> Owner Security PIN</strong>.</li>
+                <li>Protects database resets, customer deletions with active balances, and Google Sheets cloud configurations.</li>
               </ul>
-            </div>
-          </div>
-
-          <div class="guide-step-box">
-            <div class="guide-step-title">7.2 How the Recycle Bin Works</div>
-            <div class="guide-step-body">
-              <p>Transactions deleted from Daybook are never permanently destroyed:</p>
-              <ul>
-                <li>When deleted in Daybook, the record moves into the <strong>Recycle Bin Vault</strong> in Settings.</li>
-                <li>Produce item weights are automatically returned to your inventory stock.</li>
-                <li>Ledger balances adjust immediately so the customer is not overcharged.</li>
-                <li>In Google Sheets, the row status is automatically updated to:
-                  <div style="font-family:var(--font-mono); font-size:0.8rem; background:var(--bg-hover); padding:0.35rem 0.6rem; border-radius:var(--radius-xs); margin-top:0.3rem;">
-                    VOID - Deleted by Owner (YYYY-MM-DD)
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="guide-step-box">
-            <div class="guide-step-title">7.3 Restoring a Record from Recycle Bin</div>
-            <div class="guide-step-body">
-              <ol>
-                <li>Open <strong>Settings -> Backup & Maintenance</strong> tab.</li>
-                <li>Scroll to the <strong>Recycle Bin & Deleted Records Vault</strong> card.</li>
-                <li>Find the deleted bill or payment receipt in the table.</li>
-                <li>Click <strong>Restore</strong>.</li>
-                <li>The bill immediately returns to active Daybook, produce stock is re-deducted, customer debts are restored, and Google Sheets cloud status resets back to <code>ACTIVE</code>.</li>
-              </ol>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SECTION 8: FAQ & TROUBLESHOOTING -->
+      <!-- SECTION 10: FAQ & TROUBLESHOOTING -->
       <section class="guide-section" id="sec-faq" data-category="ALL">
         <div class="guide-section-header" onclick="toggleSection('sec-faq')">
           <div class="guide-section-title">
-            <span>8. Frequently Asked Questions (FAQ)</span>
+            <span>10. Frequently Asked Questions (FAQ)</span>
           </div>
           <span class="badge">FAQ</span>
         </div>

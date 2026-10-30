@@ -1,7 +1,7 @@
-# Mandi — Comprehensive User Guide
-## Step-by-Step Operating Manual for Wholesale Produce Operations
+# Zen — Comprehensive User Guide
+## Step-by-Step Operating Manual for Counter Billing, Ledger & Cloud Sync
 
-This guide provides step-by-step instructions for operating **Mandi** during daily trading hours. Every section is written in clear, procedural language (*"click this, do this"*). Image placeholders are included throughout the guide where screenshots can be inserted.
+This guide provides step-by-step instructions for operating **Zen** during daily commercial hours. Every section is written in clear, procedural language (*"click this, do this"*). High-resolution screenshots of each screen are embedded throughout the manual for immediate visual reference.
 
 ---
 
@@ -9,19 +9,20 @@ This guide provides step-by-step instructions for operating **Mandi** during dai
 1. [System Navigation & Top Bar Controls](#1-system-navigation--top-bar-controls)
 2. [Produce Rates & Catalog Management](#2-produce-rates--catalog-management)
 3. [Rapid Billing & Counter Sales](#3-rapid-billing--counter-sales)
-4. [Customer Khata Ledger Management](#4-customer-khata-ledger-management)
+4. [Customer Khata Ledger Management & Party Deletion](#4-customer-khata-ledger-management--party-deletion)
 5. [Receiving Payments & Debt Recoveries](#5-receiving-payments--debt-recoveries)
 6. [Daybook (Roznamcha) Audit Register](#6-daybook-roznamcha-audit-register)
-7. [Executive Business Dashboard](#7-executive-business-dashboard)
-8. [Settings & Data Management](#8-settings--data-management)
-   - [8.1 Shop Profile & Thermal Receipt Header](#81-shop-profile--thermal-receipt-header)
-   - [8.2 Excel & CSV Data Sync](#82-excel--csv-data-sync)
-   - [8.3 Google Sheets Cloud Sync & Annual Rollover](#83-google-sheets-cloud-sync--annual-rollover)
-   - [8.4 Daily Shop SOP Checklist](#84-daily-shop-sop-checklist)
-   - [8.5 System Backup & Cloning](#85-system-backup--cloning)
-   - [8.6 Owner Security PIN & Counter Role Lock](#86-owner-security-pin--counter-role-lock)
-   - [8.7 Mobile Offline Sync Queue & Auto-Flushing](#87-mobile-offline-sync-queue--auto-flushing)
-9. [WhatsApp Bill & Statement Dispatch](#9-whatsapp-bill--statement-dispatch)
+7. [Produce Inventory & Spoilage Tracking](#7-produce-inventory--spoilage-tracking)
+8. [Executive Business Dashboard](#8-executive-business-dashboard)
+9. [Settings & Cloud Synchronization](#9-settings--cloud-synchronization)
+   - [9.1 Shop Profile & Thermal Receipt Header](#91-shop-profile--thermal-receipt-header)
+   - [9.2 Excel & CSV Data Sync](#92-excel--csv-data-sync)
+   - [9.3 Google Sheets Cloud Sync: Upload & Download](#93-google-sheets-cloud-sync-upload--download)
+   - [9.4 Daily Shop SOP Checklist](#94-daily-shop-sop-checklist)
+   - [9.5 System Resets: Clean Ledger vs 100% Blank Slate](#95-system-resets-clean-ledger-vs-100-blank-slate)
+   - [9.6 Owner Security PIN & Counter Role Lock](#96-owner-security-pin--counter-role-lock)
+   - [9.7 Mobile Offline Sync Queue & Auto-Flushing](#97-mobile-offline-sync-queue--auto-flushing)
+10. [WhatsApp Bill & Statement Dispatch](#10-whatsapp-bill--statement-dispatch)
 
 ---
 
@@ -30,16 +31,16 @@ This guide provides step-by-step instructions for operating **Mandi** during dai
 The top header bar is present on all screens and controls global operations:
 
 ```
-[Mandi]  LOCATION: [Main Mandi Yard v]  DATE: [2026-10-08]   Billing  Dashboard  Customers  Daybook  Rates  Settings   [Synced] [Lock]  [+ Create v]  [हिन्दी]  [Dark]
+[Zen]  LOCATION: [Main Mandi Yard v]  DATE: [2026-10-30]   Billing  Dashboard  Inventory  Customers  Daybook  Rates  Settings  Guide   [Synced] [Lock]  [+ Create v]  [हिन्दी]  [Dark]
 ```
 
-<!-- IMAGE PLACEHOLDER: header_navigation_bar.png -->
+![Zen Top Navigation Bar](assets/guide/header_navigation.png)
 
 ### Steps to Operate Top Header Controls:
-1. **Switch Active Counter/Stall:** Click the **LOCATION** dropdown in the top-left to select your active selling platform (e.g., *Main Mandi Yard*, *Wholesale Shed B*).
-2. **Change Operational Date:** Click the **DATE** picker to inspect past trading days or prepare bills for a specific date.
+1. **Switch Active Counter/Stall:** Click the **LOCATION** dropdown in the top-left to select your active selling platform (e.g., *Main Mandi Yard*, *Wholesale Shed B*). Every bill will automatically tag this location.
+2. **Change Operational Date:** Click the **DATE** picker to inspect past trading days, review customer accounts on a previous date, or prepare back-dated bills.
 3. **Cloud Sync Status:** Observe the **Sync Pill** (`Synced`, `Local`, `[N] Queued`, `Offline`). Click the pill at any time to inspect queue details or trigger an immediate sync flush.
-4. **Owner Lock / Cashier Toggle:** Click the **Lock Button** to toggle between **Cashier Mode** (default auction mode) and **Owner (Unlocked)**. When stepping away from the counter, 1-click lock immediately protects sensitive functions.
+4. **Owner Lock / Cashier Toggle:** Click the **Lock Button** to toggle between **Cashier Mode** and **Owner (Unlocked)**. When stepping away from the counter, 1-click lock immediately protects sensitive functions (resets, deletions, cloud config).
 5. **Quick Action Menu:** Click the **+ Create** button in the top-right to quickly open shortcuts:
    * *New Bill*
    * *Receive Payment*
@@ -53,9 +54,9 @@ The top header bar is present on all screens and controls global operations:
 
 ## 2. Produce Rates & Catalog Management
 
-Before trading starts, set your daily wholesale auction prices in the **Rates** tab (`items.html`).
+Before trading starts, set your daily wholesale prices in the **Rates** tab (`items.html`).
 
-<!-- IMAGE PLACEHOLDER: rates_catalog_overview.png -->
+![Wholesale Rates Master](assets/guide/rates_board.png)
 
 ### How to Update Daily Produce Prices:
 1. Click **Rates** in the top navigation bar.
@@ -76,9 +77,9 @@ Before trading starts, set your daily wholesale auction prices in the **Rates** 
 
 ## 3. Rapid Billing & Counter Sales
 
-The **Billing** screen (`index.html`) is where produce is weighed and sold during auction hours.
+The **Billing** screen (`index.html`) is where produce is weighed, priced, and invoiced during trading hours.
 
-<!-- IMAGE PLACEHOLDER: billing_screen_docket.png -->
+![Zen Rapid Billing Desk](assets/guide/billing_desk.png)
 
 ### Step 3.1: Direct Cash Sale (Walk-in Buyer)
 1. Click **Billing** in the top navigation.
@@ -94,6 +95,8 @@ The **Billing** screen (`index.html`) is where produce is weighed and sold durin
    * **Share on WhatsApp:** Click **Share WhatsApp** to instantly dispatch the itemized bill to the buyer's phone via WhatsApp.
 10. Click **Close** (or press Escape) to return to the active docket for the next customer.
 
+![Thermal Receipt Preview](assets/guide/thermal_receipt.png)
+
 ---
 
 ### Step 3.2: Daily Credit (Khata) Sale (Registered Buyer)
@@ -106,55 +109,65 @@ The **Billing** screen (`index.html`) is where produce is weighed and sold durin
    * **Total Outstanding:** Net debt exposure.
 5. Add the produce items, weights, and rates as usual.
 6. Click **Complete & Print Bill**.
-7. The bill is recorded under the customer's ledger, and their pending balance increases automatically without any paper bookkeeping required.
+7. The bill is recorded under the customer's ledger, and their pending balance increases automatically.
 
 ---
 
-## 4. Customer Khata Ledger Management
+## 4. Customer Khata Ledger Management & Party Deletion
 
-The **Customers** screen (`customers.html`) provides a complete ledger (*Khata Dossier*) for all parties.
+The **Customers** screen (`customers.html`) provides a complete ledger (*Khata Dossier*) for all commercial accounts.
 
-<!-- IMAGE PLACEHOLDER: customer_ledger_screen.png -->
+![Customer Khata Ledger](assets/guide/customer_khata.png)
 
 ### How to Add a New Customer / Buyer:
 1. Click **Customers** in the navigation bar.
 2. Click the **+ Add Customer** button at the top-right.
 3. Enter the **Party Name** (e.g., *Kishan Daily Cart*).
 4. Enter their **Phone Number** (e.g., `9845012345`).
-5. Select their primary **Default Mandi Stall**.
-6. Enter their **Opening Past Due (₹)** if they have an existing balance from your old paper diary. If they have zero debt, leave it as `0.00`.
+5. Select their primary **Default Stall**.
+6. Enter their **Opening Past Due (₹)** if they have an existing balance from an old register. If they start clean, leave it as `0.00`.
 7. Click **Save Customer**.
 
 ### How to View a Customer's Ledger Statement:
-1. In the customer list, locate the party using the search bar or filter pills (*All*, *Clear*, *Overdue Dues*).
-2. Click on the customer card to open their **Ledger Dossier**.
+1. In the customer list, locate the party using the search bar or filter pills.
+2. Click on the customer card to open their **Ledger Statement Dossier**.
 3. View their complete chronological ledger breakdown:
-   * Starting Opening Due
-   * Every bill purchased (with date, items, and amounts)
-   * Every cash payment received
-   * Running net balance
-4. To print or export an official statement for the party, click **Print Statement**.
+   * Opening Past Due
+   * Taken (bills issued during the period)
+   * Repaid (cash and online payments received)
+   * Running Net Balance
+4. To print or export an official statement, click **Print Statement** or **Share WhatsApp**.
+
+![Customer Statement Modal](assets/guide/customer_statement.png)
+
+### How to Delete a Customer:
+1. On any customer row, click the **Delete** button on the far right (or open their statement modal and click **Delete Customer**).
+2. **Zero-Balance Party:** If the customer has zero balance and zero active bills, they are deleted immediately without requiring a PIN.
+3. **Party with Active Balance:** If the customer owes money or has an active balance, Zen requires the **Owner Security PIN** to confirm deletion.
+4. Once deleted, the party is removed permanently from device storage and will never be re-injected on page reload.
+
+### How to Clear Demo Customers:
+* Click the red **Clear Demo Data** button in the Customers toolbar.
+* It safely removes all sample demo customers while keeping any real parties you entered manually.
 
 ---
 
 ## 5. Receiving Payments & Debt Recoveries
 
-When a credit buyer arrives in the afternoon or evening to settle their dues, record the recovery using the **Receive Payment** feature.
-
-<!-- IMAGE PLACEHOLDER: receive_payment_modal.png -->
+When a credit buyer settles dues, record the recovery using the **Receive Payment** feature.
 
 ### Steps to Record a Payment:
-1. Click **+ Create** in the top header and choose **Receive Payment** (or click the **Collect Payment** button on any customer ledger card).
-2. The **Receive Payment** modal opens.
-3. Select the **Customer / Party Name**.
-4. The customer's current total pending debt is displayed automatically.
-5. Enter the **Payment Amount Received (₹)** (e.g., `5000.00`).
-6. Select the **Payment Mode**:
-   * **Cash:** Adds to physical cash in register.
-   * **UPI / Online:** Marks as bank transfer.
-7. Optional: Enter a short memo in **Notes** (e.g., *"Evening collection via GPay"*).
-8. Click **Save Payment Receipt**.
-9. The customer's debt is reduced instantly, and a repayment entry is created in the Daybook.
+1. Click **+ Create** in the top header and choose **Receive Payment** (or click **Receive Payment** inside a customer's statement modal).
+2. Select the **Customer / Party Name**.
+3. The customer's current total pending debt is displayed automatically.
+4. Enter the **Payment Amount Received (₹)** (e.g., `5000.00`).
+5. Select the **Payment Mode**:
+   * **CASH:** Adds to physical cash in register.
+   * **UPI / GPay:** Marks as bank transfer.
+   * **Bank NEFT / Cheque:** Records bank settlement.
+6. Optional: Enter a short memo in **Notes** (e.g., *"Evening collection via UPI"*).
+7. Click **Save Payment Receipt**.
+8. The customer's debt is reduced instantly, and a repayment entry is recorded in the Daybook.
 
 ---
 
@@ -162,247 +175,134 @@ When a credit buyer arrives in the afternoon or evening to settle their dues, re
 
 The **Daybook** screen (`daybook.html`) serves as your daily financial audit log.
 
-<!-- IMAGE PLACEHOLDER: daybook_audit_screen.png -->
+![Daybook Audit Register](assets/guide/daybook_audit.png)
 
 ### Steps to Audit Daily Operations:
 1. Click **Daybook** in the top navigation.
 2. Check the top summary metrics:
-   * **Cash Collected in Register:** Physical cash from walk-in sales + cash debt collections.
-   * **Credit Extended Today:** Goods given on Khata today.
-   * **Total Bills Issued:** Count of transactions.
+   * **Direct Spot Cash:** Cash collected immediately from walk-in cash bills.
+   * **Khata Debt Recoveries:** Cash collected from debtors paying off past accounts.
+   * **Digital Inflow (UPI):** Bank transfers and QR code payments.
+   * **Physical Cash In Register:** The exact amount of currency notes that must be in your counter drawer:
+     ```
+     Total Drawer Cash = Direct Spot Cash + Repayment Cash Inflow
+     ```
 3. Scroll through the chronological transaction table.
 4. **How to Cancel a Mistaken Bill:**
-   * Locate the bill in the table.
-   * Click the **Cancel** button on that row.
-   * Confirm the prompt. The bill is voided, and if it was a credit bill, the customer's balance is automatically rolled back.
+   * Locate the bill in the table and click **Cancel**.
+   * Enter the Owner PIN if prompted. The bill is moved to the Recycle Bin and customer balances adjust automatically.
 5. **How to Export Today's Audit:**
    * Click **Export CSV** at the top-right to download an Excel-compatible spreadsheet of the day's register.
 
 ---
 
-## 7. Executive Business Dashboard
+## 7. Produce Inventory & Spoilage Tracking
 
-The **Dashboard** screen (`dashboard.html`) provides business analytics for owners and commission agents.
+Zen includes complete inventory tracking for wholesale arrivals, floor stock, and spoilage losses (`inventory.html`).
 
-<!-- IMAGE PLACEHOLDER: business_dashboard_view.png -->
+![Inventory Stock and Valuation](assets/guide/inventory_stock.png)
 
-### How to Use the Dashboard:
-1. Click **Dashboard** in the top navigation.
-2. Review the four primary financial KPIs:
-   * **Gross Sales:** Total monetary turnover for the selected date.
-   * **Cash In Hand:** Real-time cash collection total.
-   * **Credit Issued:** Debt exposure added today.
-   * **Collection Rate:** Percentage of credit successfully collected.
-3. Inspect the **Top Debtors Watchlist** to see the 5 customers with the highest outstanding debt. Use this list to prioritize evening recovery calls.
-4. Review the **Commodity Sales Breakdown** to see which produce categories (Vegetables vs. Fruits vs. Grains) generated the highest volume.
+### 7.1 Recording Inward Stock Arrivals (Aamad / Purchase)
+1. Click **+ Inward Stock** in the Inventory tab.
+2. Select the produce item, inward quantity (e.g. `500 kg`), and purchase cost price per unit.
+3. Enter the truck vehicle number, supplier source, and challan notes.
+4. Current stock and valuation update immediately.
 
----
-
-## 8. Settings & Data Management
-
-The **Settings** screen (`settings.html`) is organized into dedicated operational tabs:
-
-<!-- IMAGE PLACEHOLDER: settings_tabs_overview.png -->
-
-### 8.1 Shop Profile & Thermal Receipt Header
-1. Click **Settings** → **Shop & Stalls** tab.
-2. Enter your **Shop / Firm Name** (e.g., *Mandi Commission Agency*).
-3. Enter your **Produce Tagline** (e.g., *Wholesale Fruits & Vegetables*).
-4. Enter your **Mandi Yard Address** (e.g., *Main Mandi Yard, Gate No. 2*).
-5. Enter your **Contact Phone Number** and standard **Commission Rate (%)**.
-6. Notice the **Thermal Receipt Slip Preview** on the right side updating in real-time as you type.
-7. Click **Save Shop Profile**.
+### 7.2 Logging Spoilage & Wastage (Kharab / Loss)
+1. Perishable goods damaged in transit or wilted must be written off to keep accounting accurate.
+2. Click **+ Log Wastage** on the Inventory screen.
+3. Select the commodity, enter damaged quantity, and choose the write-off reason (*Overripe / Rotten*, *Transit Bruising*, *Moisture Damage*).
+4. The system deducts the units from active stock and records the loss on your Executive Dashboard.
 
 ---
 
-### 8.2 Excel & CSV Data Sync
-1. Click **Settings** → **Excel & CSV Data** tab.
-2. **Exporting Data:**
-   * Click **Export Excel** under *Customer Khata Ledger* to download all party balances.
-   * Click **Export Excel** under *Produce Rates Master* to download your price catalog.
-   * Click **Export Excel** under *Sales Register* to download complete billing logs.
-   * *All files are UTF-8 BOM encoded, guaranteeing they open cleanly in Microsoft Excel without garbled text.*
-3. **Importing Data from Spreadsheets:**
-   * Click **Download Sample Template** to view the required column layout.
-   * Click **Select Customer CSV File** to upload existing customer lists and opening debt balances in bulk.
-   * Click **Select Produce CSV File** to upload produce items and wholesale prices in bulk.
+## 8. Executive Business Dashboard
+
+The **Dashboard** screen (`dashboard.html`) provides executive analytics and risk metrics.
+
+![Executive Business Dashboard](assets/guide/executive_dashboard.png)
+
+### Key Metrics Tracked:
+1. **Outstanding Debt:** Total market balance owed across all registered customers.
+2. **Advance Deposits (Jama):** Excess payments deposited by parties available for future drawing.
+3. **Sales Turnover:** Gross sales volume across all spot cash and credit bills.
+4. **Gross & Net Profit:** Real-time profit calculated by subtracting cost of goods sold and spoilage losses from sales revenue.
+5. **Stock Valuation:** Total value of inventory sitting in your shop at cost price.
+6. **Debt Aging Watchlist:** Overdue debts categorized into 0-7 days (Fresh), 8-15 days (Warning), 16-30 days (High Risk), and 30+ days (Critical).
 
 ---
 
-### 8.3 Google Sheets Cloud Sync & Annual Rollover
+## 9. Settings & Cloud Synchronization
 
-Connect your database to Google Sheets for automated annual accounting (*Salana Khata Bandi*):
+The **Settings** screen (`settings.html`) manages firm configuration, cloud connections, and backups.
 
-<!-- IMAGE PLACEHOLDER: google_sheets_sync_tab.png -->
+![Google Sheets Cloud Sync](assets/guide/settings_cloud.png)
+
+### 9.1 Shop Profile & Thermal Receipt Header
+1. Click **Settings** -> **Shop & Stalls** tab.
+2. Enter your **Shop / Firm Name**, **Tagline**, **Address**, and **Phone Number**.
+3. Inspect the live receipt preview on the right and click **Save Shop Profile**.
+
+### 9.2 Excel & CSV Data Sync
+* **Exporting:** Download complete CSV files for customers, produce rates, and sales registers. All files use UTF-8 BOM encoding for seamless Microsoft Excel compatibility.
+* **Importing:** Bulk upload customer contacts and produce catalogs using standard CSV templates.
+
+### 9.3 Google Sheets Cloud Sync: Upload & Download
+Connect your database to Google Sheets for multi-device sync and automatic annual archiving:
 
 #### Setting Up Google Sheets Connection:
-1. Open Google Sheets ([sheets.new](https://sheets.new)) in your browser and name the sheet `Mandi_Ledger_2026_27`.
-2. Click **Extensions → Apps Script**.
-3. Copy the script from `google_sheets_sync.js` in your project folder and paste it into the editor.
-4. Click **Deploy → New deployment → Web app**. Set *Execute as: Me* and *Who has access: Anyone*.
-5. Copy the generated **Web App URL**.
-6. Return to Mandi **Settings → Google Sheets & Cloud** tab.
-7. Paste the Web App URL into the **Google Apps Script Web App URL** input.
-8. Click **Save & Test Connection**. The status badge turns green (**Connected & Synced**).
+1. Open your spreadsheet in Google Sheets (e.g. `test-table` or `sheets.new`).
+2. Go to **Extensions -> Apps Script**.
+3. Paste the complete code from `google_sheets_sync.js` into the script editor.
+4. Click **Deploy -> New deployment -> Web app**. Set *Execute as: Me* and *Who has access: Anyone*.
+5. Copy the generated Web App URL (`https://script.google.com/macros/s/.../exec`).
+6. In Zen **Settings -> Google Sheets & Cloud**, paste the URL into **Google Apps Script Web App URL**.
+7. Click **Save & Test Connection**. The status turns green (**Connected & Synced**).
 
-#### Monitoring Sheet Capacity:
-* Check the **Cloud Sheet Storage Capacity** bar.
-* Safe operating threshold is **50,000 rows**.
-* If remaining rows fall below **5,000**, an alert banner appears recommending an Annual Rollover.
+#### Two-Way Data Sync Controls:
+* **Upload Local to Sheet:** Takes your local browser records (customers, rates, inventory) and overwrites the Google Sheets database. If your local store is empty, it warns you before clearing the sheet.
+* **Download from Sheet:** Downloads all records from your Google Sheet (Customers, Rates, Inventory, Settings) and hydrates your local browser storage.
 
-#### Executing 1-Click Annual Rollover (*Salana Khata Bandi*):
-1. Under **Annual Rollover & Customer Migration**, review the live statistics:
-   * Total customers to migrate
-   * Parties with pending dues
-   * Total carried-forward debt
-2. Enter the new year label (e.g., `2027_28`).
-3. Click **Execute Annual Rollover & Carry Forward Dues**.
-4. Confirm the prompt. The script automatically:
-   * Creates a brand new Google Sheet in your Google Drive (`Mandi_Ledger_2027_28`).
-   * Copies all customers, setting their **Closing Due as the new Opening Due**.
-   * Copies your produce rates and stall settings.
-   * Archives previous bills safely in the old sheet.
-   * Reconnects your Mandi app to the fresh year.
+#### 1-Click Annual Rollover (Salana Khata Bandi):
+* At the close of the financial year (March 31), enter the new year label (e.g. `2027_28`) and click **Execute Annual Rollover & Carry Forward Dues**.
+* The script creates a fresh spreadsheet in your Google Drive, carries forward customer closing balances as new Opening Dues, copies produce rates, and archives the previous year.
 
 ---
 
-### 8.4 Daily Shop SOP Checklist
-1. Click **Settings** → **Daily SOP Checklist** tab.
-2. Check off tasks as your shop progresses through the day (*Morning Opening*, *Daytime Rush*, *Night Closing*).
-3. Add custom firm tasks (e.g., *"Check potato truck unloading"*) using the **+ Add Task** bar at the bottom.
-4. Filter tasks using the phase pills (*Morning*, *Daytime*, *Night*, *Custom*).
-5. At the start of a new morning, click **Reset for New Day** to clear all checkmarks for the new day's trade.
+### 9.5 System Resets: Clean Ledger vs 100% Blank Slate
+
+In **Settings -> Backup & Maintenance**, you have three reset options:
+
+![System Resets and Maintenance](assets/guide/settings_reset.png)
+
+1. **Reset to Clean Produce Ledger:**
+   * Keeps standard produce items and wholesale rates.
+   * Wipes all customers (`customers: []`).
+   * Wipes active sales and payments (`sales: []`, `payments: []`).
+   * Wipes previous year archives (`archivedYears: []`) and inventory inward/wastage records.
+2. **Wipe to 100% Blank Slate:**
+   * Wipes absolutely everything to 0 (`items: []`, `inventory: []`, `customers: []`, `sales: []`, `archivedYears: []`).
+   * Leaves a 100% blank canvas for any commercial agency or service to start fresh or download from Google Sheets.
+3. **Load Complete Mandi Test Dataset:**
+   * Seeds 20 produce commodities, 10 parties with multi-day credit aging, and previous year historical archives for practice.
 
 ---
 
-### 8.5 System Backup & Cloning
-1. Click **Settings** → **Backup & Maintenance** tab.
-2. **Download Full Database Image:** Click **Download Full System Image (.json)** to save an offline backup to a USB drive or laptop.
-3. **Restore on Another PC:** Click **Restore System Image (.json)** and select your backup file to clone the system onto another computer.
-4. **Factory Reset:** Use **Reset to Sample Demo Dataset** if you want to wipe test data and restore default sample data (requires Owner PIN).
+### 9.6 Owner Security PIN & Counter Role Lock
+* **Default PIN:** `1234`.
+* **Updating PIN:** Navigate to **Settings -> Backup & Maintenance -> Owner Security PIN** to update your 4-digit code.
+* **Protected Operations:** Demanded whenever attempting to delete customers with balances, execute database wipes, or modify cloud configurations.
+
+### 9.7 Mobile Offline Sync Queue & Auto-Flushing
+* **100% Offline Capability:** In areas with spotty internet, Zen writes all transactions locally and buffers them in `syncQueue`.
+* **Automatic Upload:** As soon as Wi-Fi or cellular connection is restored, Zen pushes queued transactions to Google Sheets in the background.
 
 ---
 
-### 8.6 Owner Security PIN & Counter Role Lock
-1. **Default Cashier Mode:** During fast morning auctions, cashiers can issue bills, receive payments, and print thermal slips with zero friction.
-2. **Protected Actions:** The 4-digit Owner PIN is required to perform destructive administrative actions:
-   * Factory reset / database wipe
-   * Annual financial rollover (*Salana Khata Bandi*)
-   * Deleting transaction records from the Daybook
-3. **Unlocking Owner Mode:**
-   * Click the **Lock Button** in the top header.
-   * Enter the 4-digit PIN (default is `1234`) using the on-screen numeric keypad or physical keyboard.
-   * The button turns green and displays **Owner (Unlocked)**.
-4. **Locking Again:** When leaving the cash counter, click the green **Owner (Unlocked)** button once to immediately lock back to Cashier Mode.
-5. **Changing the Owner PIN:**
-   * Go to **Settings** → **Backup & Maintenance** tab.
-   * Locate the **Owner Security PIN & Lock** card.
-   * Enter your current PIN, type a new 4-digit numeric PIN, confirm it, and click **Update Owner PIN**.
+## 10. WhatsApp Bill & Statement Dispatch
 
----
+Zen features direct WhatsApp integration that operates without third-party API keys or subscription fees:
 
-### 8.7 Mobile Offline Sync Queue & Auto-Flushing
-1. **Offline Mode on Mobile Devices:** When running Mandi on mobile or tablet in the mandi yard with weak or no internet connectivity:
-   * All sales bills and payments are immediately written to local storage.
-   * A copy of each pending transaction is automatically placed into the **Offline Sync Queue** (`syncQueue`).
-   * The top header displays an orange **Offline (N)** pill indicating how many records are buffered.
-2. **Automatic Flushing:** As soon as internet connectivity returns, the application automatically posts all queued items to your Google Sheets workbook in the background. The pill switches to **Syncing...** and then **Synced**.
-3. **Manual Queue Inspection & Flushing:**
-   * Go to **Settings** → **Google Sheets & Cloud** tab.
-   * In the **Offline Sync Queue** card, review the number of pending transactions.
-   * Click **Flush Queue to Cloud** to force an immediate sync attempt.
-
----
-
-## 9. WhatsApp Bill & Statement Dispatch
-
-Mandi includes built-in WhatsApp sharing that works without third-party API costs or complex setups.
-
-### 9.1 Sharing a Sales Bill via WhatsApp
-1. Complete a sale on the **Billing** screen or click **Slip** on any transaction in the **Daybook** (`daybook.html`).
-2. The Receipt Slip preview modal appears.
-3. Click the green **Share WhatsApp** button.
-4. **If billing a registered party:** WhatsApp opens automatically directly to that buyer's chat with the full formatted receipt pre-typed.
-5. **If billing a walk-in cash buyer:** Enter the buyer's 10-digit mobile number when prompted, or leave blank to choose a contact directly inside WhatsApp.
-6. Press **Send** in WhatsApp.
-
-### 9.2 Sharing a Payment Collection Receipt
-1. When collecting cash from a debtor, click **Receive Payment** (or **Settle** in the Khata screen).
-2. Record the payment amount and click **Record Payment**.
-3. In the payment receipt slip preview, click **Share WhatsApp**.
-4. An itemized payment receipt is sent showing the exact amount collected and the customer's remaining Khata debt balance.
-
-### 9.3 Sharing a Full Khata Statement
-1. Go to **Customers** (`customers.html`) and click on any customer row.
-2. The **Customer Ledger** modal appears.
-3. Select your desired period filter (e.g., *7 Days*, *30 Days*, or *All Time*).
-4. Click **Share WhatsApp** in the bottom-right of the modal.
-5. A statement summary is sent to the buyer displaying Opening Due, Total Taken, Total Repaid, and Net Balance Due.
-
----
-
-## 10. Inventory, Stock & Profit Management
-
-Mandi features an integrated inventory system that tracks produce stock levels, incoming wholesale arrivals (*Maal Aamad*), spoilage losses (*Kharab Maal*), purchase cost rates (*Khareed Rate*), and net trading profit.
-
-### 10.1 Mandi Stock Board (`inventory.html`)
-1. Click **Inventory** in the top navigation bar (or **Stock** in the mobile bottom bar).
-2. The **Mandi Stock Board** displays all produce commodities with:
-   * **Current Floor Stock:** Available quantity in kg, boxes, crates, or bags.
-   * **Stock Status Badge:** Green **Healthy**, Amber **Low Stock Alert**, or Red **Out of Stock**.
-   * **Cost Rate (Khareed ₹):** Wholesale purchase rate.
-   * **Selling Rate (Bikri ₹):** Default counter rate.
-   * **Gross Margin:** Profit margin in ₹ per unit and percentage (`%`).
-   * **Stock Valuation:** Total capital tied up in that commodity (`Stock * Cost Rate`).
-3. Use the search input or dropdown filters to narrow down by category (Vegetables, Fruits, Grains) or stock alert level.
-
-### 10.2 Recording Inward Stock Arrivals (*Maal Aamad*)
-When fresh shipments arrive by truck or tempo from wholesale suppliers or farmers:
-1. Click **+ Inward Stock** (or navigate to the **Inward Arrivals Register** tab and click **+ Record Inward Stock**).
-2. Select the **Produce Commodity**. The unit and current cost price are pre-filled automatically.
-3. Enter the **Received Quantity** (e.g., `250` kg).
-4. Enter the **Purchase Rate** per unit (e.g., `₹24.00`). The modal dynamically calculates the **Total Lot Cost** (e.g., `₹6,000.00`).
-5. Keep **Update master purchase cost price** checked if you want subsequent margin calculations to reflect this latest arrival rate.
-6. Enter the **Supplier / Farmer Name** and any **Vehicle / Challan Notes** (e.g., `Truck MH-15-AB-4321, 10 crates`).
-7. Click **Save Inward Stock**.
-   * Commodity floor stock increments immediately.
-   * The entry is logged in the permanent **Inward Arrivals Register** tab.
-
-### 10.3 Logging Spoilage & Wastage (*Kharab Maal*)
-Perishable produce that is bruised, rotten, dehydrated, or unsaleable should be written off to keep stock counts and profit numbers honest:
-1. Click **+ Log Wastage** on the Inventory screen (or click the red **Spoil** button on any produce row).
-2. Select the **Commodity** and enter the **Spoiled Quantity** to deduct.
-3. The cost price and estimated financial loss are calculated automatically.
-4. Select the **Write-Off Reason**:
-   * *Spoiled / Rotten (सड़न / फफूंद)*
-   * *Transport Bruised / Crushed (दबा हुआ माल)*
-   * *Moisture & Rain Damage (बारिश व नमी से खराब)*
-   * *Weight Shrinkage / Dehydration (सूखा व वजन घट)*
-   * *Overripe / Unsaleable (अत्यधिक पका हुआ)*
-   * *Handling Breakage (सफाई व छंटाई कचरा)*
-5. Enter inspection notes and click **Confirm Stock Deduction**.
-   * The damaged quantity is deducted from active inventory.
-   * The financial write-off loss is recorded and deducted from business Net Profit.
-
-### 10.4 Physical Stock Count Reconciliation (Scale Audit)
-At the end of the day or weekly stock audit:
-1. On the **Mandi Stock Board**, click the **Audit** button next to any commodity.
-2. The modal displays the **System Recorded Stock** (e.g., `85 kg`).
-3. Enter the actual weighed **Physical Counted Stock** from your scale (e.g., `81.5 kg`).
-4. The system calculates the discrepancy variance (`-3.5 kg`).
-5. Enter a reason (e.g., *End of day scale tally, moisture loss*) and click **Update Master Stock**.
-
-### 10.5 Real-Time Billing & Profit Tracking
-* **Automatic Stock Depletion:** Every time a sales bill is printed or settled, the sold weights are automatically deducted from `currentStock`.
-* **Historical Cost Price Locking:** When a bill is finalized, the current wholesale cost price of each item is permanently locked into that bill's record. If purchase rates rise tomorrow, past bill profits remain 100% historically accurate.
-* **Docket Stock Indicators:** On the **Billing** screen (`index.html`), produce tiles display current stock badges so cashiers immediately see which items are low or out of stock.
-
-### 10.6 Reviewing Business Profit on the Dashboard (`dashboard.html`)
-Navigate to the **Dashboard** to view executive profit analytics:
-1. **Gross Profit (सकल मुनाफा):** Total sales turnover minus wholesale cost of goods sold (`Revenue - COGS`).
-2. **Gross Margin (%):** Percentage margin earned on sales.
-3. **Net Profit (शुद्ध लाभ):** Gross profit minus total spoilage losses (`Gross Profit - Spoilage Loss`).
-4. **Stock Valuation (स्टॉक मूल्य):** Total financial value of all produce currently in stock.
-5. **Produce Profitability Leaderboard:** Detailed table ranking produce items by Net Profit, Volume Sold, Revenue, Wholesale Cost, and Margin Percentage.
-
-
+1. **Sales Bill Dispatch:** After finalizing a bill, click **Share WhatsApp**. On desktop it launches `web.whatsapp.com`, and on mobile it launches the native WhatsApp app with the itemized bill pre-typed.
+2. **Payment Receipt Dispatch:** In the payment collection modal, click **Share WhatsApp** to send a formal repayment voucher displaying amount collected and updated balance.
+3. **Customer Statement Dispatch:** In the customer statement modal, click **Share WhatsApp** to send a comprehensive balance summary showing Opening Due, Period Taken, Period Repaid, and Net Outstanding Balance.

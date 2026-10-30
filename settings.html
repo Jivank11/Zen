@@ -1276,20 +1276,33 @@
         renderCapacityMeter(stats);
       });
 
-      // Sync Master Catalog Now
+      // Sync Master Catalog Now (Upload Local to Sheet)
       document.getElementById('btnSyncAllMasterData')?.addEventListener('click', async () => {
         const url = getCloudConfig().scriptUrl;
         if (!url) {
           alert('Please enter and save your Google Apps Script Web App URL first.');
           return;
         }
+
+        const custCount = (store.data.customers || []).length;
+        const itemCount = (store.data.items || []).length;
+
+        let confirmMsg = `Upload local data (${itemCount} items, ${custCount} customers) to Google Sheets? This will update the sheets with your local records.`;
+        if (custCount === 0 && itemCount === 0) {
+          confirmMsg = 'WARNING: Your local database is completely blank (0 items, 0 customers).\n\nUploading now will truncate and clear your Customers, Rates, and Inventory sheets in Google Sheets.\n\nDo you want to proceed?';
+        } else if (custCount === 0) {
+          confirmMsg = `Notice: You have 0 customers locally.\n\nUploading will clear all rows in your Google Sheets Customers tab (leaving only header). Proceed?`;
+        }
+
+        if (!confirm(confirmMsg)) return;
+
         try {
           const btn = document.getElementById('btnSyncAllMasterData');
           btn.textContent = 'Syncing...';
           btn.disabled = true;
 
           const result = await store.syncMasterDataToCloud();
-          btn.textContent = 'Sync Master Catalog Now';
+          btn.textContent = 'Upload Local to Sheet';
           btn.disabled = false;
 
           if (result && result.success) {

@@ -24,3 +24,5 @@ package.json
 package-lock.json
 playwright.config.js
 e2e/
+test.html
+capture_guide_images.js
