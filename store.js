@@ -614,17 +614,18 @@ class CoreStore {
         if (!parsed.cloudConfig) {
           parsed.cloudConfig = JSON.parse(JSON.stringify(DEFAULT_DATA.cloudConfig));
         }
+        const isCustomized = localStorage.getItem('MANDI_DATA_CUSTOMIZED') === 'true';
         if (!Array.isArray(parsed.archivedYears)) {
-          parsed.archivedYears = DEFAULT_DATA.archivedYears ? JSON.parse(JSON.stringify(DEFAULT_DATA.archivedYears)) : [];
+          parsed.archivedYears = (!isCustomized && DEFAULT_DATA.archivedYears) ? JSON.parse(JSON.stringify(DEFAULT_DATA.archivedYears)) : [];
         }
         if (!Array.isArray(parsed.syncQueue)) {
           parsed.syncQueue = [];
         }
         if (!Array.isArray(parsed.inventoryInward)) {
-          parsed.inventoryInward = DEFAULT_DATA.inventoryInward ? JSON.parse(JSON.stringify(DEFAULT_DATA.inventoryInward)) : [];
+          parsed.inventoryInward = (!isCustomized && DEFAULT_DATA.inventoryInward) ? JSON.parse(JSON.stringify(DEFAULT_DATA.inventoryInward)) : [];
         }
         if (!Array.isArray(parsed.inventoryWastage)) {
-          parsed.inventoryWastage = DEFAULT_DATA.inventoryWastage ? JSON.parse(JSON.stringify(DEFAULT_DATA.inventoryWastage)) : [];
+          parsed.inventoryWastage = (!isCustomized && DEFAULT_DATA.inventoryWastage) ? JSON.parse(JSON.stringify(DEFAULT_DATA.inventoryWastage)) : [];
         }
         if (!Array.isArray(parsed.recycleBin)) {
           parsed.recycleBin = [];
@@ -722,11 +723,46 @@ class CoreStore {
       customers: [],
       sales: [],
       payments: [],
+      archivedYears: [],
+      inventoryInward: [],
+      inventoryWastage: [],
       recycleBin: [],
+      syncQueue: [],
       cloudConfig: getCloudConfig()
     };
     localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
     this.save(clean);
+    this.currentLocationId = this.data.locations[0]?.id || 'loc-1';
+    this.currentDate = getTodayDateString();
+    localStorage.setItem('MANDI_ACTIVE_LOC', this.currentLocationId);
+    localStorage.setItem('MANDI_ACTIVE_DATE', this.currentDate);
+  }
+
+  resetToBlankSlate() {
+    const blank = {
+      locations: this.data.locations && this.data.locations.length ? this.data.locations : [
+        { id: 'loc-1', name: 'Main Trade Counter', code: 'MAIN' }
+      ],
+      shopProfile: this.data.shopProfile || {
+        name: 'Trade Agency',
+        subtitle: 'Commercial Billing & Ledger',
+        address: '',
+        phone: '',
+        commissionRate: 0.0
+      },
+      items: [],
+      customers: [],
+      sales: [],
+      payments: [],
+      archivedYears: [],
+      inventoryInward: [],
+      inventoryWastage: [],
+      recycleBin: [],
+      syncQueue: [],
+      cloudConfig: getCloudConfig()
+    };
+    localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
+    this.save(blank);
     this.currentLocationId = this.data.locations[0]?.id || 'loc-1';
     this.currentDate = getTodayDateString();
     localStorage.setItem('MANDI_ACTIVE_LOC', this.currentLocationId);
@@ -1690,6 +1726,56 @@ class CoreStore {
       return { success: data && data.status === 'success', data };
     } catch (err) {
       console.warn('Master data cloud sync error:', err);
+      return { success: false, message: err.message };
+    }
+  }
+
+  async pullAllFromCloud() {
+    const cfg = this.data.cloudConfig || getCloudConfig();
+    const url = cfg ? cfg.scriptUrl : '';
+    if (!url) {
+      return { success: false, message: 'Google Sheets Web App URL not configured.' };
+    }
+
+    try {
+      const payload = { action: 'PULL_ALL_DATA' };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data || data.status !== 'success') {
+        return { success: false, message: data && data.message ? data.message : 'Failed to download data from Google Sheets' };
+      }
+
+      if (Array.isArray(data.customers)) {
+        this.data.customers = data.customers;
+      }
+      if (Array.isArray(data.items)) {
+        this.data.items = data.items;
+      }
+      if (data.shopProfile && data.shopProfile.name) {
+        this.data.shopProfile = { ...this.data.shopProfile, ...data.shopProfile };
+      }
+      if (Array.isArray(data.locations) && data.locations.length > 0) {
+        this.data.locations = data.locations;
+      }
+
+      this.data.archivedYears = [];
+      this.data.inventoryInward = [];
+      this.data.inventoryWastage = [];
+
+      localStorage.setItem('MANDI_DATA_CUSTOMIZED', 'true');
+      this.save(this.data);
+
+      return {
+        success: true,
+        customersCount: (data.customers || []).length,
+        itemsCount: (data.items || []).length
+      };
+    } catch (err) {
+      console.warn('Pull from Google Sheets error:', err);
       return { success: false, message: err.message };
     }
   }

@@ -315,6 +315,46 @@ function doPost(e) {
     }
 
     // -------------------------------------------------------------
+    // ACTION: PULL_ALL_DATA (Download Full Database from Google Sheets)
+    // -------------------------------------------------------------
+    if (action === "PULL_ALL_DATA") {
+      var customers = readCurrentCustomersFromSheet(ss);
+      var invItems = readInventoryFromSheet(ss);
+      var ratesItems = readRatesFromSheet(ss);
+      
+      var itemsToReturn = [];
+      if (invItems.length > 0) {
+        itemsToReturn = invItems;
+      } else {
+        itemsToReturn = ratesItems.map(function(r) {
+          return {
+            id: r.id,
+            name: r.name,
+            category: r.category,
+            unit: r.unit,
+            defaultRate: r.rate,
+            costPrice: Math.round(r.rate * 0.75),
+            currentStock: 100,
+            minAlertStock: 20
+          };
+        });
+      }
+
+      var settingsData = readSettingsFromSheet(ss);
+      var stats = calculateCapacityStats(ss);
+
+      return jsonResponse({
+        status: "success",
+        message: "Full database pulled from Google Sheets",
+        customers: customers,
+        items: itemsToReturn,
+        shopProfile: settingsData.profile,
+        locations: settingsData.locations,
+        stats: stats
+      });
+    }
+
+    // -------------------------------------------------------------
     // ACTION: ROLLOVER_FINANCIAL_YEAR (One Spreadsheet Per Year Rollover)
     // -------------------------------------------------------------
     if (action === "ROLLOVER_FINANCIAL_YEAR") {
@@ -595,6 +635,32 @@ function readRatesFromSheet(ss) {
     }
   }
   return rates;
+}
+
+/**
+ * Read Inventory from Inventory Sheet
+ */
+function readInventoryFromSheet(ss) {
+  var sheet = ss.getSheetByName("Inventory");
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  var items = [];
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    if (row[0] || row[1]) {
+      items.push({
+        id: String(row[0] || ('itm-' + r)),
+        name: String(row[1] || ''),
+        category: String(row[2] || 'Produce'),
+        unit: String(row[3] || 'kg'),
+        currentStock: Number(row[4] || 0),
+        costPrice: Number(row[5] || 0),
+        defaultRate: Number(row[6] || 0),
+        minAlertStock: Number(row[7] || 20)
+      });
+    }
+  }
+  return items;
 }
 
 /**

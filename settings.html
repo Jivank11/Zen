@@ -288,7 +288,8 @@
 
               <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                 <button type="submit" class="btn-primary" style="padding:0.4rem 1rem; font-size:0.78rem;">Save & Test Connection</button>
-                <button type="button" class="btn-ghost" id="btnSyncAllMasterData" style="padding:0.4rem 0.9rem; font-size:0.78rem;">Sync Master Catalog Now</button>
+                <button type="button" class="btn-ghost" id="btnSyncAllMasterData" style="padding:0.4rem 0.9rem; font-size:0.78rem;" title="Upload local catalog to Google Sheets">Upload Local to Sheet</button>
+                <button type="button" class="btn-ghost" id="btnPullAllFromCloud" style="padding:0.4rem 0.9rem; font-size:0.78rem; color:var(--brand-accent); border-color:var(--brand-accent);" title="Download full data from Google Sheets">Download from Sheet</button>
               </div>
             </form>
           </div>
@@ -582,17 +583,20 @@
         <div class="settings-card">
           <h3 class="card-title" style="color:var(--color-danger);">System Reset & Factory Defaults</h3>
           <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">
-            Reset your database to a completely blank production ledger, or load the realistic 10-party demo dataset for practice.
+            Reset your database to an empty production ledger, wipe everything to a 100% blank canvas, or load the realistic demo dataset for practice.
           </p>
           <div style="padding:0.85rem; background:var(--color-danger-bg); border:1px solid var(--color-danger-border); border-radius:var(--radius-xs); margin-bottom:1rem;">
             <strong style="color:var(--color-danger); font-size:0.78rem; display:block;">Warning: Irreversible Action</strong>
             <span style="font-size:0.74rem; color:var(--text-muted);">Resetting will wipe transactions and balances. Export an Excel backup first if you need to keep records.</span>
           </div>
           <button type="button" class="btn-ghost" id="btnResetDemo" style="color:var(--color-danger); border-color:var(--color-danger-border); width:100%; text-align:center; margin-bottom:0.75rem; padding:0.6rem 1rem;">
-            Reset to Clean Defaults (Fresh Empty Ledger - Zero Customers & Zero Bills)
+            Reset to Clean Produce Ledger (Zero Customers, Zero Bills & Zero Archives, Keep Default Produce)
+          </button>
+          <button type="button" class="btn-ghost" id="btnReset100Blank" style="color:var(--color-danger); border-color:var(--color-danger-border); width:100%; text-align:center; margin-bottom:0.75rem; padding:0.6rem 1rem; font-weight:700;">
+            Wipe to 100% Blank Slate (Zero Items, Zero Inventory, Zero Customers, Zero Archives)
           </button>
           <button type="button" class="btn-primary" id="btnLoadRichTest" style="width:100%; text-align:center; padding:0.6rem 1rem;">
-            Load Complete Mandi Test Dataset (20 Items, 10 Parties, Multi-day Aging)
+            Load Complete Mandi Test Dataset (20 Items, 10 Parties, Multi-day Aging, FY 2025-26 Archive)
           </button>
         </div>
 
@@ -694,6 +698,17 @@
           if (confirm('Reset to clean empty shop ledger? This erases all customers, transactions, and debts to zero while keeping your shop profile and produce rates catalog so you can start live billing.')) {
             store.resetToCleanSlate();
             alert('Data reset to clean empty shop ledger! Ready for fresh billing.');
+            window.location.reload();
+          }
+        });
+      });
+
+      // Wipe 100% Blank Slate (Zero Items, Zero Inventory, Zero Customers, Zero Archives)
+      document.getElementById('btnReset100Blank')?.addEventListener('click', () => {
+        promptOwnerPin('Wipe to 100% Blank Slate', () => {
+          if (confirm('Wipe everything to a 100% blank slate? This erases all produce items, inventory stock, customers, bills, and historical archives so you can start completely from scratch.')) {
+            store.resetToBlankSlate();
+            alert('Database wiped to 100% blank slate! Ready for custom setup.');
             window.location.reload();
           }
         });
@@ -1287,9 +1302,45 @@
           alert('Network error syncing data: ' + err.message);
           const btn = document.getElementById('btnSyncAllMasterData');
           if (btn) {
-            btn.textContent = 'Sync Master Catalog Now';
+            btn.textContent = 'Upload Local to Sheet';
             btn.disabled = false;
           }
+        }
+      });
+
+      // Pull All Data from Google Sheets (Download & Overwrite Local)
+      document.getElementById('btnPullAllFromCloud')?.addEventListener('click', async () => {
+        const url = getCloudConfig().scriptUrl;
+        if (!url) {
+          alert('Please enter and save your Google Apps Script Web App URL first.');
+          return;
+        }
+        if (!confirm('Download all data from Google Sheets and overwrite local browser storage? This will replace your local customers, produce rates, and inventory with the records in your Google Sheet.')) {
+          return;
+        }
+        const btn = document.getElementById('btnPullAllFromCloud');
+        try {
+          if (btn) {
+            btn.textContent = 'Downloading...';
+            btn.disabled = true;
+          }
+          const result = await store.pullAllFromCloud();
+          if (btn) {
+            btn.textContent = 'Download from Sheet';
+            btn.disabled = false;
+          }
+          if (result && result.success) {
+            alert(`Download complete! Loaded ${result.itemsCount} produce items and ${result.customersCount} customers from Google Sheets.`);
+            window.location.reload();
+          } else {
+            alert('Download failed: ' + ((result && result.message) || 'Unknown error'));
+          }
+        } catch (err) {
+          if (btn) {
+            btn.textContent = 'Download from Sheet';
+            btn.disabled = false;
+          }
+          alert('Network error downloading data: ' + err.message);
         }
       });
 
